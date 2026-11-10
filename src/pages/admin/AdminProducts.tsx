@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Search, Pencil, Archive, Trash2, Eye } from 'lucide-react';
+import { Upload, Plus, Search, Pencil, Archive, Trash2, Eye } from 'lucide-react';
 import { supabase, PRODUCT_COSTS_EMBED, withCosts, formatCurrency, type Product, type Category } from '../../lib/supabase';
 import { useSettings } from '../../contexts/SettingsContext';
 import { useToast } from '../../contexts/ToastContext';
@@ -10,6 +10,7 @@ import { Badge } from '../../components/ui/Badge';
 import { ProductImage as Img } from '../../components/ui/Feedback';
 import { primaryImage } from '../../components/ProductCard';
 import ProductForm from './ProductForm';
+import BulkUploadModal from '../../components/admin/BulkUploadModal';
 import { cn } from '../../lib/utils';
 
 const AdminProducts: React.FC = () => {
@@ -22,6 +23,7 @@ const AdminProducts: React.FC = () => {
   const [status, setStatus] = useState('');
   const [catId, setCatId] = useState('');
   const [formOpen, setFormOpen] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
 
   const load = async () => {
@@ -57,7 +59,8 @@ const AdminProducts: React.FC = () => {
   return (
     <div>
       <AdminHeader title="Products" subtitle={`${products.length} product(s)`}
-        actions={<Button onClick={() => { setEditing(null); setFormOpen(true); }}><Plus size={16} /> Add Product</Button>} />
+        actions={<div className="flex gap-2"><Button variant="outline" onClick={() => setBulkOpen(true)}><Upload size={16} /> Bulk Upload</Button><Button onClick={() => { setEditing(null); setFormOpen(true); }}><Plus size={16} /> Add Product</Button></div>} />
+      <BulkUploadModal open={bulkOpen} onClose={() => setBulkOpen(false)} onDone={load} />
 
       <div className="flex flex-wrap gap-3 mb-5">
         <div className="relative flex-1 min-w-[220px] max-w-sm">

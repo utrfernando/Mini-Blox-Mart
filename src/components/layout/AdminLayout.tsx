@@ -3,23 +3,37 @@ import { NavLink, Outlet, Link } from 'react-router-dom';
 import {
   LayoutDashboard, Package, FolderTree, Boxes, ShoppingCart, Users,
   TicketPercent, Image as ImageIcon, Globe, Settings, MessageSquare,
-  Blocks, ArrowLeft, Menu, Truck,
+  Blocks, ArrowLeft, Menu, Truck, Wallet, ShieldCheck,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useSettings } from '../../contexts/SettingsContext';
 
-const NAV = [
-  { to: '/admin', label: 'Overview', icon: LayoutDashboard, end: true },
-  { to: '/admin/products', label: 'Products', icon: Package },
-  { to: '/admin/categories', label: 'Categories', icon: FolderTree },
-  { to: '/admin/inventory', label: 'Inventory', icon: Boxes },
-  { to: '/admin/orders', label: 'Orders', icon: ShoppingCart },
-  { to: '/admin/customers', label: 'Customers', icon: Users },
-  { to: '/admin/discounts', label: 'Discount Codes', icon: TicketPercent },
-  { to: '/admin/promotions', label: 'Promotions', icon: ImageIcon },
-  { to: '/admin/messages', label: 'Messages', icon: MessageSquare },
-  { to: '/admin/website', label: 'Website', icon: Globe },
-  { to: '/admin/settings', label: 'Store Settings', icon: Settings },
+const NAV_GROUPS = [
+  { title: 'Dashboard', items: [
+    { to: '/admin', label: 'Overview', icon: LayoutDashboard, end: true },
+  ] },
+  { title: 'Products', items: [
+    { to: '/admin/products', label: 'Products', icon: Package },
+    { to: '/admin/categories', label: 'Categories', icon: FolderTree },
+    { to: '/admin/inventory', label: 'Inventory & Suppliers', icon: Boxes },
+  ] },
+  { title: 'Sales', items: [
+    { to: '/admin/orders', label: 'Orders', icon: ShoppingCart },
+    { to: '/admin/discounts', label: 'Discount Codes', icon: TicketPercent },
+    { to: '/admin/promotions', label: 'Promotions', icon: ImageIcon },
+  ] },
+  { title: 'Finance', items: [
+    { to: '/admin/finance', label: 'Finance', icon: Wallet },
+  ] },
+  { title: 'People', items: [
+    { to: '/admin/users', label: 'Users & Access', icon: ShieldCheck },
+    { to: '/admin/customers', label: 'Customers', icon: Users },
+    { to: '/admin/messages', label: 'Messages', icon: MessageSquare },
+  ] },
+  { title: 'Store', items: [
+    { to: '/admin/website', label: 'Website', icon: Globe },
+    { to: '/admin/settings', label: 'Store Settings', icon: Settings },
+  ] },
 ];
 
 const AdminLayout: React.FC = () => {
@@ -36,20 +50,25 @@ const AdminLayout: React.FC = () => {
         </div>
       </div>
       <nav className="flex-1 overflow-y-auto p-3 space-y-1">
-        {NAV.map(item => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            end={item.end}
-            onClick={() => setOpen(false)}
-            className={({ isActive }) => cn(
-              'flex items-center gap-3 px-4 py-2.5 rounded-2xl text-sm font-bold transition',
-              isActive ? 'bg-mint-500 text-white shadow-soft' : 'text-ink-300 hover:bg-white/5 hover:text-white'
-            )}
-          >
-            <item.icon size={18} />
-            {item.label}
-          </NavLink>
+        {NAV_GROUPS.map(g => (
+          <div key={g.title} className="pb-2">
+            <p className="px-4 pt-2 pb-1 text-[10px] font-extrabold uppercase tracking-wider text-ink-500">{g.title}</p>
+            {g.items.map(item => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={(item as any).end}
+                onClick={() => setOpen(false)}
+                className={({ isActive }) => cn(
+                  'flex items-center gap-3 px-4 py-2.5 rounded-2xl text-sm font-bold transition',
+                  isActive ? 'bg-mint-500 text-white shadow-soft' : 'text-ink-300 hover:bg-white/5 hover:text-white'
+                )}
+              >
+                <item.icon size={18} />
+                {item.label}
+              </NavLink>
+            ))}
+          </div>
         ))}
       </nav>
       <div className="p-3 border-t border-white/10">

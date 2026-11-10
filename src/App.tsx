@@ -34,6 +34,8 @@ import AdminPromotions from './pages/admin/AdminPromotions';
 import AdminMessages from './pages/admin/AdminMessages';
 import AdminWebsite from './pages/admin/AdminWebsite';
 import AdminSettings from './pages/admin/AdminSettings';
+import AdminUsers from './pages/admin/AdminUsers';
+import AdminFinance from './pages/admin/AdminFinance';
 
 // ------------------------------------------------------------------
 const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -59,6 +61,8 @@ const AdminSection: React.FC = () => {
     case 'categories': return <AdminCategories />;
     case 'inventory': return <AdminInventory />;
     case 'orders': return <AdminOrders />;
+    case 'users': return <AdminUsers />;
+    case 'finance': return <AdminFinance />;
     case 'customers': return <AdminCustomers />;
     case 'discounts': return <AdminDiscounts />;
     case 'promotions': return <AdminPromotions />;
