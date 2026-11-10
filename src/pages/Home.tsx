@@ -199,13 +199,13 @@ const Home: React.FC = () => {
       )}
 
       {secVisible('featured') && (
-        <div className="bg-mint-50/60 -mx-4 sm:mx-0"><ProductRow title="Featured Products" subtitle="Hand-picked favourites" products={featured.products} loading={featured.loading} viewAll="/shop?filter=featured" /></div>
+        <div className="bg-mint-50/60"><ProductRow title="Featured Products" subtitle="Hand-picked favourites" products={featured.products} loading={featured.loading} viewAll="/shop?filter=featured" /></div>
       )}
       {secVisible('bestsellers') && (
         <ProductRow title="Best Sellers" subtitle="Loved by our community" products={bestsellers.products} loading={bestsellers.loading} viewAll="/shop?filter=bestseller" />
       )}
       {secVisible('newarrivals') && (
-        <div className="bg-sunshine-50/60 -mx-4 sm:mx-0"><ProductRow title="New Arrivals" subtitle="Fresh off the shelf" products={newArrivals.products} loading={newArrivals.loading} viewAll="/shop?filter=new" /></div>
+        <div className="bg-sunshine-50/60"><ProductRow title="New Arrivals" subtitle="Fresh off the shelf" products={newArrivals.products} loading={newArrivals.loading} viewAll="/shop?filter=new" /></div>
       )}
 
       {/* Promo banners */}

@@ -20,6 +20,9 @@
   border-radius: 4px;
 }
 
+html, body { overflow-x: clip; max-width: 100%; }
+img, video { max-width: 100%; height: auto; }
+
 body {
   font-family: 'Nunito', system-ui, sans-serif;
   line-height: 1.6;

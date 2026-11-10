@@ -275,7 +275,7 @@ const PurchaseModal: React.FC<{ open: boolean; onClose: () => void; products: Pr
           </Field>
           <Field label="Date"><Input type="date" value={date} onChange={e => setDate(e.target.value)} /></Field>
         </div>
-        <div className="space-y-2">
+        <div className="space-y-2 overflow-x-auto"><div className="min-w-[440px] space-y-2">
           <div className="grid grid-cols-[1fr_90px_110px_36px] gap-2 text-xs font-extrabold uppercase text-ink-400 px-1">
             <span>Product</span><span>Qty</span><span>Unit Cost</span><span />
           </div>
@@ -291,7 +291,7 @@ const PurchaseModal: React.FC<{ open: boolean; onClose: () => void; products: Pr
             </div>
           ))}
           <Button variant="secondary" size="sm" onClick={() => setRows([...rows, { product_id: '', quantity: 1, unit_cost: 0 }])}><Plus size={14} /> Add Row</Button>
-        </div>
+        </div></div>
         <Field label="Notes"><Textarea value={notes} onChange={e => setNotes(e.target.value)} className="min-h-[60px]" /></Field>
         <div className="flex items-center justify-between">
           <p className="font-extrabold text-ink-900">Total: {formatCurrency(total, 'LKR')}</p>

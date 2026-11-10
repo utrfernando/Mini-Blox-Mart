@@ -8,7 +8,7 @@ export const AdminHeader: React.FC<{ title: string; subtitle?: string; actions?:
       <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-ink-900">{title}</h1>
       {subtitle && <p className="text-sm text-ink-500 font-semibold mt-0.5">{subtitle}</p>}
     </div>
-    {actions && <div className="flex gap-2">{actions}</div>}
+    {actions && <div className="flex flex-wrap gap-2 w-full sm:w-auto">{actions}</div>}
   </div>
 );
 
