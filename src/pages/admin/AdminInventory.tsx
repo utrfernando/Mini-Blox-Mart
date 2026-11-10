@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Plus, ArrowUpFromLine, Package, Truck } from 'lucide-react';
+import { InvoiceControl } from '../../components/admin/InvoiceControl';
 import { supabase, PRODUCT_COSTS_EMBED, withCosts, formatCurrency, formatDate, type Product, type InventoryTransaction, type Purchase, type Supplier } from '../../lib/supabase';
 import { useSettings } from '../../contexts/SettingsContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -122,7 +123,10 @@ const AdminInventory: React.FC = () => {
                   <p className="font-display font-bold text-ink-900">{pu.reference || 'Purchase'} · {formatDate(pu.purchase_date)}</p>
                   <p className="text-xs text-ink-400">{pu.supplier?.name || 'No supplier'} · {pu.items?.length || 0} item(s)</p>
                 </div>
-                <p className="font-extrabold text-ink-900">{formatCurrency(Number(pu.total_cost), currency)}</p>
+                <div className="text-right space-y-1">
+                  <p className="font-extrabold text-ink-900">{formatCurrency(Number(pu.total_cost), currency)}</p>
+                  <InvoiceControl table="purchases" id={pu.id} path={pu.invoice_path} name={pu.invoice_name} onChanged={load} />
+                </div>
               </div>
               <div className="text-sm text-ink-600 space-y-1">
                 {pu.items?.map((it, i) => {

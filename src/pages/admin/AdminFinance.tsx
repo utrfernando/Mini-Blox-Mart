@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Banknote, TrendingUp, Receipt, Wallet, Boxes, Truck, Plus, Download, Trash2, AlertTriangle } from 'lucide-react';
+import { Banknote, TrendingUp, Receipt, Wallet, Boxes, Truck, Plus, Download, Trash2, AlertTriangle, Pencil, Paperclip } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Legend, PieChart, Pie, Cell } from 'recharts';
-import { supabase, PRODUCT_COSTS_EMBED, withCosts, formatCurrency, formatDate, type Order, type Product } from '../../lib/supabase';
+import { InvoiceControl } from '../../components/admin/InvoiceControl';
+import { supabase, uploadInvoice, PRODUCT_COSTS_EMBED, withCosts, formatCurrency, formatDate, type Order, type Product } from '../../lib/supabase';
 import { useSettings } from '../../contexts/SettingsContext';
 import { useToast } from '../../contexts/ToastContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -10,7 +11,7 @@ import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { Input, Select, Field } from '../../components/ui/Input';
 
-type Expense = { id: string; expense_date: string; category: string; description: string | null; amount: number; paid_to: string | null; payment_method: string | null; reference: string | null };
+type Expense = { id: string; expense_date: string; category: string; description: string | null; amount: number; paid_to: string | null; payment_method: string | null; reference: string | null; invoice_path?: string | null; invoice_name?: string | null };
 type Purchase = { id: string; purchase_date: string; total_cost: number };
 
 const EXPENSE_CATEGORIES = ['Shipping & delivery', 'Packaging', 'Advertising', 'Salaries & wages', 'Rent', 'Utilities', 'Platform & payment fees', 'Software & tools', 'Taxes & licences', 'Other'];
@@ -51,6 +52,8 @@ const AdminFinance: React.FC = () => {
   const [missingTable, setMissingTable] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [form, setForm] = useState<typeof blank>(blank);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [file, setFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
 
   const load = async () => {
@@ -111,26 +114,46 @@ const AdminFinance: React.FC = () => {
     return [...m.entries()].map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
   }, [f.exp]);
 
+  const openNew = () => { setEditId(null); setForm(blank); setFile(null); setFormOpen(true); };
+  const openEdit = (x: Expense) => {
+    setEditId(x.id); setFile(null);
+    setForm({ expense_date: x.expense_date, category: x.category, description: x.description || '', amount: String(x.amount), paid_to: x.paid_to || '', payment_method: x.payment_method || 'cash', reference: x.reference || '' });
+    setFormOpen(true);
+  };
+
   const saveExpense = async () => {
     const amount = Number(form.amount);
     if (!(amount >= 0) || form.amount === '') return error('Enter an amount.');
     setSaving(true);
-    const { error: e } = await supabase.from('expenses').insert({
-      expense_date: form.expense_date, category: form.category, description: form.description || null, amount,
-      paid_to: form.paid_to || null, payment_method: form.payment_method || null, reference: form.reference || null, created_by: user?.id,
-    });
-    setSaving(false);
-    if (e) return error(e.message);
-    success('Expense recorded'); setFormOpen(false); setForm(blank); load();
+    try {
+      const row: Record<string, unknown> = {
+        expense_date: form.expense_date, category: form.category, description: form.description || null, amount,
+        paid_to: form.paid_to || null, payment_method: form.payment_method || null, reference: form.reference || null,
+      };
+      if (file) { const up = await uploadInvoice(file, 'expenses'); row.invoice_path = up.path; row.invoice_name = up.name; }
+      if (editId) {
+        const old = expenses.find(x => x.id === editId);
+        const { error: e } = await supabase.from('expenses').update(row).eq('id', editId);
+        if (e) throw e;
+        if (file && old?.invoice_path) await supabase.storage.from('invoices').remove([old.invoice_path]);
+      } else {
+        const { error: e } = await supabase.from('expenses').insert({ ...row, created_by: user?.id });
+        if (e) throw e;
+      }
+      success(editId ? 'Expense updated' : 'Expense recorded'); setFormOpen(false); setForm(blank); setFile(null); setEditId(null); load();
+    } catch (e: any) { error(e.message || 'Could not save expense'); }
+    finally { setSaving(false); }
   };
   const removeExpense = async (x: Expense) => {
     if (!confirm(`Delete this ${money(Number(x.amount))} expense?`)) return;
-    await supabase.from('expenses').delete().eq('id', x.id); load();
+    await supabase.from('expenses').delete().eq('id', x.id);
+    if (x.invoice_path) await supabase.storage.from('invoices').remove([x.invoice_path]);
+    load();
   };
 
   const exportExpenses = () => download(`expenses-${range}.csv`, [
-    ['Date', 'Category', 'Description', 'Amount', 'Paid to', 'Method', 'Reference'],
-    ...f.exp.map(e => [e.expense_date, e.category, e.description || '', e.amount, e.paid_to || '', e.payment_method || '', e.reference || '']),
+    ['Date', 'Category', 'Description', 'Amount', 'Paid to', 'Method', 'Reference', 'Invoice file'],
+    ...f.exp.map(e => [e.expense_date, e.category, e.description || '', e.amount, e.paid_to || '', e.payment_method || '', e.reference || '', e.invoice_name || '']),
   ]);
   const exportOrders = () => download(`sales-${range}.csv`, [
     ['Order', 'Date', 'Customer', 'Status', 'Payment', 'Method', 'Subtotal', 'Discount', 'Delivery', 'Total'],
@@ -143,7 +166,7 @@ const AdminFinance: React.FC = () => {
         actions={<>
           <Select value={range} onChange={e => setRange(e.target.value)} className="!py-2">{RANGES.map(r => <option key={r.v} value={r.v}>{r.l}</option>)}</Select>
           <Button variant="outline" onClick={exportOrders}><Download size={16} /> Sales CSV</Button>
-          <Button onClick={() => setFormOpen(true)} disabled={missingTable}><Plus size={16} /> Add Expense</Button>
+          <Button onClick={openNew} disabled={missingTable}><Plus size={16} /> Add Expense</Button>
         </>} />
 
       {missingTable && (
@@ -190,7 +213,7 @@ const AdminFinance: React.FC = () => {
           <h3 className="font-display text-xl font-extrabold text-ink-900">Expense ledger</h3>
           <Button variant="ghost" size="sm" onClick={exportExpenses} disabled={!f.exp.length}><Download size={14} /> Export CSV</Button>
         </div>
-        <Table head={['Date', 'Category', 'Description', 'Paid to', 'Ref', 'Amount', '']}>
+        <Table head={['Date', 'Category', 'Description', 'Paid to', 'Ref', 'Invoice', 'Amount', '']}>
           {f.exp.length === 0 ? <tr><Td className="text-center py-8 text-ink-400">No expenses in this period.</Td></tr> :
           f.exp.map(e => (
             <tr key={e.id} className="hover:bg-ink-50/50">
@@ -199,14 +222,15 @@ const AdminFinance: React.FC = () => {
               <Td className="text-ink-600">{e.description || '—'}</Td>
               <Td className="text-ink-600">{e.paid_to || '—'}</Td>
               <Td className="text-xs text-ink-500">{e.reference || '—'}</Td>
+              <Td><InvoiceControl table="expenses" id={e.id} path={e.invoice_path} name={e.invoice_name} onChanged={load} /></Td>
               <Td className="font-bold text-ink-900">{money(Number(e.amount))}</Td>
-              <Td><button onClick={() => removeExpense(e)} className="p-2 rounded-full hover:bg-red-50 text-red-500" aria-label="Delete"><Trash2 size={15} /></button></Td>
+              <Td><div className="flex"><button onClick={() => openEdit(e)} className="p-2 rounded-full hover:bg-ink-100 text-ink-500" aria-label="Edit"><Pencil size={15} /></button><button onClick={() => removeExpense(e)} className="p-2 rounded-full hover:bg-red-50 text-red-500" aria-label="Delete"><Trash2 size={15} /></button></div></Td>
             </tr>
           ))}
         </Table>
       </>}
 
-      <Modal open={formOpen} onClose={() => setFormOpen(false)} title="Add expense">
+      <Modal open={formOpen} onClose={() => setFormOpen(false)} title={editId ? "Edit expense" : "Add expense"}>
         <div className="grid sm:grid-cols-2 gap-4">
           <Field label="Date"><Input type="date" value={form.expense_date} onChange={e => setForm({ ...form, expense_date: e.target.value })} /></Field>
           <Field label="Amount"><Input type="number" min="0" step="0.01" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} /></Field>
@@ -214,9 +238,18 @@ const AdminFinance: React.FC = () => {
           <Field label="Payment method"><Select value={form.payment_method} onChange={e => setForm({ ...form, payment_method: e.target.value })}><option value="cash">Cash</option><option value="bank">Bank transfer</option><option value="card">Card</option><option value="other">Other</option></Select></Field>
           <Field label="Paid to"><Input value={form.paid_to} onChange={e => setForm({ ...form, paid_to: e.target.value })} /></Field>
           <Field label="Receipt / invoice no."><Input value={form.reference} onChange={e => setForm({ ...form, reference: e.target.value })} /></Field>
+          <div className="sm:col-span-2">
+            <Field label="Invoice / receipt (optional)">
+              <label className="flex items-center gap-2 rounded-2xl border-2 border-dashed border-ink-200 px-4 py-3 text-sm cursor-pointer hover:border-mint-400">
+                <Paperclip size={16} className="text-mint-600" />
+                <span className="font-semibold text-ink-700 truncate">{file ? file.name : editId ? 'Choose a file to replace the current invoice' : 'PDF, image or spreadsheet (max 15 MB)'}</span>
+                <input type="file" className="hidden" accept=".pdf,.png,.jpg,.jpeg,.webp,.xlsx,.xls,.csv,.doc,.docx" onChange={e => setFile(e.target.files?.[0] || null)} />
+              </label>
+            </Field>
+          </div>
           <div className="sm:col-span-2"><Field label="Description"><Input value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} /></Field></div>
         </div>
-        <div className="flex justify-end gap-2 mt-5"><Button variant="ghost" onClick={() => setFormOpen(false)}>Cancel</Button><Button loading={saving} onClick={saveExpense}>Save expense</Button></div>
+        <div className="flex justify-end gap-2 mt-5"><Button variant="ghost" onClick={() => setFormOpen(false)}>Cancel</Button><Button loading={saving} onClick={saveExpense}>{editId ? 'Save changes' : 'Save expense'}</Button></div>
       </Modal>
     </div>
   );

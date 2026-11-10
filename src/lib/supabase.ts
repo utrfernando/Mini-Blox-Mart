@@ -89,6 +89,8 @@ export type Purchase = {
   purchase_date: string;
   total_cost: number;
   notes: string | null;
+  invoice_path?: string | null;
+  invoice_name?: string | null;
   created_by: string | null;
   created_at: string;
   supplier?: Supplier | null;
@@ -337,5 +339,20 @@ export async function openReceipt(pathOrUrl: string) {
   if (/^https?:\/\//.test(pathOrUrl)) { window.open(pathOrUrl, '_blank', 'noopener'); return; }
   const { data, error } = await supabase.storage.from('payment-proofs').createSignedUrl(pathOrUrl, 300);
   if (error || !data?.signedUrl) { alert('Could not open receipt: ' + (error?.message || 'unknown error')); return; }
+  window.open(data.signedUrl, '_blank', 'noopener');
+}
+
+// Invoices live in the private admin-only 'invoices' bucket.
+export async function uploadInvoice(file: File, folder: string): Promise<{ path: string; name: string }> {
+  if (file.size > 15 * 1024 * 1024) throw new Error('File is larger than 15 MB.');
+  const safe = file.name.replace(/[^a-zA-Z0-9._-]+/g, '_');
+  const path = `${folder}/${Date.now()}-${safe}`;
+  const { error } = await supabase.storage.from('invoices').upload(path, file);
+  if (error) throw new Error(/not found/i.test(error.message) ? 'Invoice storage is not set up yet - run migration 0004_invoices.sql in Supabase.' : error.message);
+  return { path, name: file.name };
+}
+export async function openInvoice(path: string) {
+  const { data, error } = await supabase.storage.from('invoices').createSignedUrl(path, 300);
+  if (error || !data?.signedUrl) { alert('Could not open invoice: ' + (error?.message || 'unknown error')); return; }
   window.open(data.signedUrl, '_blank', 'noopener');
 }
