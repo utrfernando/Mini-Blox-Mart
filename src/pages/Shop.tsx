@@ -133,13 +133,13 @@ const Shop: React.FC = () => {
           </div>
 
           {loading ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-6">
               {Array.from({ length: 9 }).map((_, i) => <ProductCardSkeleton key={i} />)}
             </div>
           ) : products.length === 0 ? (
             q ? <SearchEmpty onReset={clearAll} /> : <EmptyState title="No products here yet" message="Check back soon — we're adding new cute things all the time." />
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-6">
               {products.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
             </div>
           )}
