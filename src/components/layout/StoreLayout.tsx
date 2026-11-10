@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { Search, ShoppingBag, Heart, User, Menu, X, Mail, Phone, MapPin, Blocks, ChevronDown, LogOut } from 'lucide-react';
 import { FaInstagram, FaTiktok, FaFacebookF } from 'react-icons/fa';
@@ -177,6 +178,7 @@ const Header: React.FC = () => {
       </div>
 
       {/* Mobile drawer */}
+      {createPortal(
       <AnimatePresence>
         {mobileOpen && (
           <>
@@ -218,7 +220,9 @@ const Header: React.FC = () => {
             </motion.div>
           </>
         )}
-      </AnimatePresence>
+      </AnimatePresence>,
+      document.body
+      )}
     </header>
   );
 };
