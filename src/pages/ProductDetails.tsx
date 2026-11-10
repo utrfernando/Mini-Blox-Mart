@@ -63,22 +63,22 @@ const ProductDetails: React.FC = () => {
   const discountPct = product.discount_price ? Math.round((1 - product.discount_price / product.selling_price) * 100) : 0;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      <button onClick={() => navigate(-1)} className="inline-flex items-center gap-2 text-sm font-bold text-ink-500 hover:text-mint-600 mb-6 transition">
+    <div className="max-w-7xl mx-auto px-4 py-4 sm:py-8 pb-28 sm:pb-8">
+      <button onClick={() => navigate(-1)} className="inline-flex items-center gap-2 text-sm font-bold text-ink-500 hover:text-mint-600 mb-4 sm:mb-6 transition">
         <ArrowLeft size={16} /> Back
       </button>
 
-      <div className="grid lg:grid-cols-2 gap-10">
+      <div className="grid lg:grid-cols-2 gap-6 lg:gap-10">
         {/* Gallery */}
         <div>
-          <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} className="product-image-container aspect-square rounded-[2rem] border border-ink-100">
-            <ProductImage src={mainImg} alt={product.name} iconClassName="w-28 h-28" />
+          <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} className="product-image-container aspect-square rounded-3xl sm:rounded-[2rem] border border-ink-100 bg-white">
+            <ProductImage src={mainImg} alt={product.name} iconClassName="w-28 h-28" className="!object-contain bg-white" />
           </motion.div>
           {images.length > 1 && (
-            <div className="flex gap-3 mt-4 overflow-x-auto pb-2">
+            <div className="flex gap-2 sm:gap-3 mt-3 sm:mt-4 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
               {images.map((img, i) => (
-                <button key={img.id} onClick={() => setActiveImg(i)} className={cn('w-20 h-20 shrink-0 rounded-2xl overflow-hidden border-4 transition', i === activeImg ? 'border-mint-500' : 'border-transparent hover:border-ink-200')}>
-                  <ProductImage src={img.url} alt={img.alt_text || product.name} iconClassName="w-8 h-8" />
+                <button key={img.id} onClick={() => setActiveImg(i)} className={cn('w-16 h-16 sm:w-20 sm:h-20 shrink-0 rounded-2xl overflow-hidden border-4 transition bg-white', i === activeImg ? 'border-mint-500' : 'border-transparent hover:border-ink-200')}>
+                  <ProductImage src={img.url} alt={img.alt_text || product.name} iconClassName="w-8 h-8" className="!object-contain" />
                 </button>
               ))}
             </div>
@@ -93,14 +93,14 @@ const ProductDetails: React.FC = () => {
             {product.is_featured && <Badge color="mint">FEATURED</Badge>}
             {product.category && <Badge color="ink">{product.category.name}</Badge>}
           </div>
-          <h1 className="font-display text-3xl sm:text-4xl font-extrabold text-ink-900">{product.name}</h1>
+          <h1 className="font-display text-2xl sm:text-4xl font-extrabold text-ink-900 break-words">{product.name}</h1>
           {product.sku && <p className="text-sm text-ink-400 font-semibold mt-1">SKU: {product.sku}</p>}
 
-          <div className="mt-4 flex items-baseline gap-3">
-            <span className="text-3xl font-extrabold text-ink-900">{formatCurrency(price, currency)}</span>
+          <div className="mt-3 sm:mt-4 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <span className="text-2xl sm:text-3xl font-extrabold text-ink-900">{formatCurrency(price, currency)}</span>
             {product.discount_price && (
               <>
-                <span className="text-xl text-ink-400 line-through">{formatCurrency(product.selling_price, currency)}</span>
+                <span className="text-lg sm:text-xl text-ink-400 line-through">{formatCurrency(product.selling_price, currency)}</span>
                 <Badge color="peach">Save {discountPct}%</Badge>
               </>
             )}
@@ -121,18 +121,18 @@ const ProductDetails: React.FC = () => {
           )}
 
           {/* Qty + actions */}
-          <div className="mt-7 flex flex-wrap items-center gap-4">
+          <div className="fixed bottom-0 inset-x-0 z-40 flex items-center gap-2 border-t border-ink-100 bg-white/95 backdrop-blur px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:static sm:z-auto sm:mt-7 sm:flex-wrap sm:gap-4 sm:border-0 sm:bg-transparent sm:backdrop-blur-none sm:p-0">
             <div className="inline-flex items-center rounded-full border-2 border-ink-100 overflow-hidden">
-              <button onClick={() => setQty(q => Math.max(1, q - 1))} className="px-4 py-2.5 hover:bg-ink-50 text-ink-700"><Minus size={16} /></button>
-              <span className="px-5 py-2.5 font-extrabold text-ink-900 min-w-[3rem] text-center">{qty}</span>
-              <button onClick={() => setQty(q => Math.min(product.stock_quantity, q + 1))} disabled={outOfStock} className="px-4 py-2.5 hover:bg-ink-50 text-ink-700 disabled:opacity-40"><Plus size={16} /></button>
+              <button onClick={() => setQty(q => Math.max(1, q - 1))} className="px-3 sm:px-4 py-2.5 hover:bg-ink-50 text-ink-700"><Minus size={16} /></button>
+              <span className="px-2 sm:px-5 py-2.5 font-extrabold text-ink-900 min-w-[2rem] sm:min-w-[3rem] text-center">{qty}</span>
+              <button onClick={() => setQty(q => Math.min(product.stock_quantity, q + 1))} disabled={outOfStock} className="px-3 sm:px-4 py-2.5 hover:bg-ink-50 text-ink-700 disabled:opacity-40"><Plus size={16} /></button>
             </div>
-            <Button size="lg" disabled={outOfStock} onClick={() => { addToCart(product, qty); success(`${product.name} added to cart`); }}>
+            <Button size="lg" className="flex-1 sm:flex-none !px-3 sm:!px-7 whitespace-nowrap" disabled={outOfStock} onClick={() => { addToCart(product, qty); success(`${product.name} added to cart`); }}>
               <ShoppingBag size={18} /> Add to Cart
             </Button>
             <button
               onClick={async () => { const added = await toggleWishlist(product); success(added ? 'Saved to wishlist' : 'Removed from wishlist'); }}
-              className={cn('p-3.5 rounded-full border-2 transition active:scale-90', wishlisted ? 'bg-red-500 border-red-500 text-white' : 'border-ink-100 text-ink-500 hover:border-red-300 hover:text-red-400')}
+              className={cn('p-3 sm:p-3.5 shrink-0 rounded-full border-2 transition active:scale-90', wishlisted ? 'bg-red-500 border-red-500 text-white' : 'border-ink-100 text-ink-500 hover:border-red-300 hover:text-red-400')}
               aria-label="Wishlist"
             >
               <Heart size={20} fill={wishlisted ? 'currentColor' : 'none'} />
@@ -140,13 +140,13 @@ const ProductDetails: React.FC = () => {
           </div>
 
           {/* Perks */}
-          <div className="grid grid-cols-3 gap-3 mt-8">
+          <div className="grid grid-cols-3 gap-2 sm:gap-3 mt-6 sm:mt-8">
             {[
               { icon: <Truck size={18} />, t: 'Fast Delivery', d: `Free over ${currencySymbol} ${freeDeliveryThreshold.toLocaleString()}` },
               { icon: <ShieldCheck size={18} />, t: 'Secure Pay', d: 'COD & Bank Transfer' },
               { icon: <RefreshCcw size={18} />, t: 'Easy Returns', d: '7-day policy' },
             ].map((p, i) => (
-              <div key={i} className="rounded-3xl bg-white border border-ink-100 p-4 text-center">
+              <div key={i} className="rounded-3xl bg-white border border-ink-100 p-3 sm:p-4 text-center">
                 <div className="w-10 h-10 mx-auto rounded-full bg-mint-50 text-mint-600 flex items-center justify-center mb-2">{p.icon}</div>
                 <p className="text-xs font-extrabold text-ink-900">{p.t}</p>
                 <p className="text-[11px] text-ink-500">{p.d}</p>
@@ -158,7 +158,7 @@ const ProductDetails: React.FC = () => {
 
       {/* Related */}
       {related.length > 0 && (
-        <section className="mt-16">
+        <section className="mt-10 sm:mt-16">
           <h2 className="font-display text-2xl font-extrabold text-ink-900 mb-6">You Might Also Like</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
             {related.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
