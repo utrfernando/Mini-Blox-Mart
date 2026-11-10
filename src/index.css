@@ -1,0 +1,90 @@
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+*:focus {
+  outline: none;
+}
+
+*:focus-visible {
+  outline: 2px solid #14b8a6;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+body {
+  font-family: 'Nunito', system-ui, sans-serif;
+  line-height: 1.6;
+  min-height: 100vh;
+  background: #fffdf7;
+  color: #333945;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.font-display {
+  font-family: 'Baloo 2', 'Nunito', system-ui, sans-serif;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: #fff9ec; }
+::-webkit-scrollbar-thumb { background: #5eead4; border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: #2dd4bf; }
+
+/* Animations */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+@keyframes wiggle {
+  0%, 100% { transform: rotate(-3deg); }
+  50% { transform: rotate(3deg); }
+}
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-float { animation: float 4s ease-in-out infinite; }
+.animate-wiggle { animation: wiggle 2s ease-in-out infinite; }
+.animate-marquee { animation: marquee 30s linear infinite; }
+
+/* Product card image zoom */
+.product-image-container {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #f0fdf9, #fff9ec);
+}
+.product-image-container img {
+  transition: transform 0.5s ease;
+}
+.product-image-container:hover img {
+  transform: scale(1.07);
+}
+
+/* Dotted playful background */
+.bg-dots {
+  background-image: radial-gradient(circle, #99f6e4 1.5px, transparent 1.5px);
+  background-size: 22px 22px;
+}
+.bg-dots-yellow {
+  background-image: radial-gradient(circle, #fde68a 1.5px, transparent 1.5px);
+  background-size: 22px 22px;
+}
+
+/* Line clamp helpers (in case plugin absent) */
+.line-clamp-1 { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: box; overflow: hidden; }
+.line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: box; overflow: hidden; }
+.line-clamp-3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: box; overflow: hidden; }

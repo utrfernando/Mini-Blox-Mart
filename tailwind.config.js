@@ -1,0 +1,90 @@
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        // Miniblox brand palette
+        mint: {
+          50: '#f0fdf9',
+          100: '#ccfbf1',
+          200: '#99f6e4',
+          300: '#5eead4',
+          400: '#2dd4bf',
+          500: '#14b8a6',
+          600: '#0d9488',
+          700: '#0f766e',
+          800: '#115e59',
+          900: '#134e4a',
+        },
+        sunshine: {
+          50: '#fffbeb',
+          100: '#fef3c7',
+          200: '#fde68a',
+          300: '#fcd34d',
+          400: '#fbbf24',
+          500: '#f59e0b',
+          600: '#d97706',
+          700: '#b45309',
+          800: '#92400e',
+          900: '#78350f',
+        },
+        cream: {
+          50: '#fffdf7',
+          100: '#fff9ec',
+          200: '#fff3d6',
+          300: '#ffe9bd',
+          400: '#fddc94',
+        },
+        peach: {
+          50: '#fff7ed',
+          100: '#ffedd5',
+          200: '#fed7aa',
+          300: '#fdba74',
+          400: '#fb923c',
+          500: '#f97316',
+          600: '#ea580c',
+        },
+        lavender: {
+          50: '#f5f3ff',
+          100: '#ede9fe',
+          200: '#ddd6fe',
+          300: '#c4b5fd',
+          400: '#a78bfa',
+          500: '#8b5cf6',
+          600: '#7c3aed',
+          700: '#6d28d9',
+        },
+        ink: {
+          50: '#f6f7f9',
+          100: '#eceef2',
+          200: '#d5dae3',
+          300: '#b1bacb',
+          400: '#8794ad',
+          500: '#687691',
+          600: '#535e77',
+          700: '#444d60',
+          800: '#3a4251',
+          900: '#333945',
+          950: '#1f232b',
+        },
+      },
+      fontFamily: {
+        sans: ['"Nunito"', 'Quicksand', 'system-ui', 'sans-serif'],
+        display: ['"Baloo 2"', '"Nunito"', 'system-ui', 'sans-serif'],
+      },
+      borderRadius: {
+        '4xl': '2rem',
+      },
+      boxShadow: {
+        'soft': '0 4px 20px rgba(15, 118, 110, 0.08)',
+        'soft-lg': '0 10px 40px rgba(15, 118, 110, 0.12)',
+        'playful': '0 8px 24px rgba(245, 158, 11, 0.15)',
+      },
+    },
+  },
+  plugins: [],
+}
