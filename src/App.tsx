@@ -15,6 +15,7 @@ import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
 import Wishlist from './pages/Wishlist';
 import Login from './pages/Login';
+import ResetPassword from './pages/ResetPassword';
 import Register from './pages/Register';
 import { Contact, About, FAQ, ShippingPolicy, ReturnPolicy, PrivacyPolicy, Terms } from './pages/InfoPages';
 import Profile from './pages/account/Profile';
@@ -85,6 +86,7 @@ const App: React.FC = () => {
                   <Route path="/wishlist" element={<Wishlist />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/contact" element={<Contact />} />
                   <Route path="/about" element={<About />} />
                   <Route path="/faq" element={<FAQ />} />
