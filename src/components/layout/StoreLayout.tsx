@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { Link, NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Search, ShoppingBag, Heart, User, Menu, X, Mail, Phone, MapPin, Blocks, ChevronDown, LogOut } from 'lucide-react';
 import { FaInstagram, FaTiktok, FaFacebookF } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -63,6 +63,16 @@ const Header: React.FC = () => {
     e.preventDefault();
     if (query.trim()) navigate(`/shop?q=${encodeURIComponent(query.trim())}`);
     setMobileOpen(false);
+  };
+
+  const location = useLocation();
+  const isLinkActive = (to: string) => {
+    const [path, qs = ''] = to.split('?');
+    if (location.pathname !== path) return false;
+    const want = new URLSearchParams(qs);
+    const have = new URLSearchParams(location.search);
+    if (![...want.keys()].length) return !have.has('category') && !have.has('filter');
+    return [...want.entries()].every(([k, v]) => have.get(k) === v);
   };
 
   const navLinks = [
@@ -163,9 +173,9 @@ const Header: React.FC = () => {
             <NavLink
               key={l.to + l.label}
               to={l.to}
-              className={({ isActive }) => cn(
+              className={() => cn(
                 'px-4 py-1.5 rounded-full text-sm font-bold whitespace-nowrap transition',
-                isActive ? 'bg-mint-500 text-white' : 'text-ink-700 hover:bg-mint-50 hover:text-mint-700'
+                isLinkActive(l.to) ? 'bg-mint-500 text-white' : 'text-ink-700 hover:bg-mint-50 hover:text-mint-700'
               )}
             >
               {l.label}
@@ -196,7 +206,7 @@ const Header: React.FC = () => {
               </form>
               <nav className="flex-1 overflow-y-auto px-4 pb-4 space-y-1">
                 {navLinks.map(l => (
-                  <NavLink key={l.label} to={l.to} onClick={() => setMobileOpen(false)} className={({ isActive }) => cn('block px-4 py-3 rounded-2xl font-bold', isActive ? 'bg-mint-500 text-white' : 'text-ink-800 hover:bg-mint-50')}>
+                  <NavLink key={l.label} to={l.to} onClick={() => setMobileOpen(false)} className={() => cn('block px-4 py-3 rounded-2xl font-bold', isLinkActive(l.to) ? 'bg-mint-500 text-white' : 'text-ink-800 hover:bg-mint-50')}>
                     {l.label}
                   </NavLink>
                 ))}
