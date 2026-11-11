@@ -9,7 +9,7 @@ import { useCartTotals } from './Cart';
 import { useSettings } from '../contexts/SettingsContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
-import { supabase, isSupabaseConfigured, formatCurrency, type PaymentMethod, type DiscountCode } from '../lib/supabase';
+import { supabase, isSupabaseConfigured, formatCurrency, unitPrice, type PaymentMethod, type DiscountCode } from '../lib/supabase';
 import { Button } from '../components/ui/Button';
 import { Input, Textarea, Select, Field } from '../components/ui/Input';
 import { EmptyState } from '../components/ui/Feedback';
@@ -198,7 +198,7 @@ const Checkout: React.FC = () => {
               {items.map(i => (
                 <div key={i.product.id} className="flex justify-between text-sm gap-3">
                   <span className="text-ink-600 line-clamp-2">{i.product.name} <span className="text-ink-400">×{i.quantity}</span></span>
-                  <span className="font-bold whitespace-nowrap">{formatCurrency((i.product.discount_price ?? i.product.selling_price) * i.quantity, currency)}</span>
+                  <span className="font-bold whitespace-nowrap">{formatCurrency(unitPrice(i.product) * i.quantity, currency)}</span>
                 </div>
               ))}
             </div>

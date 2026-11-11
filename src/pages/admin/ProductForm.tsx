@@ -97,7 +97,7 @@ const ProductForm: React.FC<Props> = ({ open, onClose, product, onSaved }) => {
       description: data.description || null,
       category_id: data.category_id || null,
       selling_price: Number(data.selling_price),
-      discount_price: data.discount_price === '' || data.discount_price == null ? null : Number(data.discount_price),
+      discount_price: data.discount_price === '' || data.discount_price == null || Number(data.discount_price) <= 0 ? null : Number(data.discount_price),
       stock_quantity: Number(data.stock_quantity),
       low_stock_threshold: Number(data.low_stock_threshold),
       status: data.status,

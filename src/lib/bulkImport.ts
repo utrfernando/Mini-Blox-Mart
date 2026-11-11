@@ -120,7 +120,8 @@ export function parseRows(grid: unknown[][], opt: ImportOptions): { rows: Parsed
         warnings.push(`Selling price calculated from ${opt.markupPercent}% markup`);
       } else errors.push('Missing selling_price (or set a markup %)');
     }
-    const discount = num(o.discount_price);
+    const discountRaw = num(o.discount_price);
+    const discount = discountRaw !== null && discountRaw > 0 ? discountRaw : null; // 0 / blank = no discount
     if (selling !== null && discount !== null && discount >= selling) warnings.push('Discount price is not lower than selling price');
     const stock = Math.max(0, Math.round(num(o.stock_quantity) ?? 0));
     if ((num(o.stock_quantity) ?? 0) < 0) errors.push('Negative stock');

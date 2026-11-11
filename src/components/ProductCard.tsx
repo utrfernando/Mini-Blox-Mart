@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, ShoppingBag, Star } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { type Product, formatCurrency } from '../lib/supabase';
+import { type Product, formatCurrency, hasDiscount, unitPrice } from '../lib/supabase';
 import { useCart } from '../contexts/CartContext';
 import { useToast } from '../contexts/ToastContext';
 import { useSettings } from '../contexts/SettingsContext';
@@ -15,7 +15,7 @@ export const primaryImage = (p: Product): string | null => {
   return primary?.url || null;
 };
 
-export const effectivePrice = (p: Product) => p.discount_price ?? p.selling_price;
+export const effectivePrice = (p: Product) => unitPrice(p);
 
 const ProductCard: React.FC<{ product: Product; index?: number }> = ({ product, index = 0 }) => {
   const { addToCart, toggleWishlist, isWishlisted } = useCart();
@@ -24,8 +24,8 @@ const ProductCard: React.FC<{ product: Product; index?: number }> = ({ product, 
   const wishlisted = isWishlisted(product.id);
   const outOfStock = product.stock_quantity <= 0;
   const price = effectivePrice(product);
-  const discountPct = product.discount_price
-    ? Math.round((1 - product.discount_price / product.selling_price) * 100)
+  const discountPct = hasDiscount(product)
+    ? Math.round((1 - (product.discount_price as number) / product.selling_price) * 100)
     : 0;
 
   return (
@@ -71,7 +71,7 @@ const ProductCard: React.FC<{ product: Product; index?: number }> = ({ product, 
         </Link>
         <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-0">
           <span className="text-base sm:text-lg font-extrabold text-ink-900 whitespace-nowrap">{formatCurrency(price, currency)}</span>
-          {product.discount_price && (
+          {hasDiscount(product) && (
             <span className="text-xs sm:text-sm text-ink-400 line-through whitespace-nowrap">{formatCurrency(product.selling_price, currency)}</span>
           )}
         </div>

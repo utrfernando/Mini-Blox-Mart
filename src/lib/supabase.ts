@@ -356,3 +356,9 @@ export async function openInvoice(path: string) {
   if (error || !data?.signedUrl) { alert('Could not open invoice: ' + (error?.message || 'unknown error')); return; }
   window.open(data.signedUrl, '_blank', 'noopener');
 }
+
+// A discount only counts when it is a real positive price below the selling price.
+export const hasDiscount = (p: { discount_price: number | null; selling_price: number }) =>
+  p.discount_price != null && p.discount_price > 0 && p.discount_price < p.selling_price;
+export const unitPrice = (p: { discount_price: number | null; selling_price: number }) =>
+  hasDiscount(p) ? (p.discount_price as number) : p.selling_price;

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Upload, Plus, Search, Pencil, Archive, Trash2, Eye } from 'lucide-react';
-import { supabase, PRODUCT_COSTS_EMBED, withCosts, formatCurrency, type Product, type Category } from '../../lib/supabase';
+import { supabase, PRODUCT_COSTS_EMBED, withCosts, formatCurrency, unitPrice, hasDiscount, type Product, type Category } from '../../lib/supabase';
 import { useSettings } from '../../contexts/SettingsContext';
 import { useToast } from '../../contexts/ToastContext';
 import { AdminHeader, Table, Td, stockBadge } from '../../components/admin/ui';
@@ -95,8 +95,8 @@ const AdminProducts: React.FC = () => {
             </Td>
             <Td className="text-ink-600">{p.category?.name || '—'}</Td>
             <Td>
-              <p className="font-bold text-ink-900">{formatCurrency(p.discount_price ?? p.selling_price, currency)}</p>
-              {p.discount_price && <p className="text-xs text-ink-400 line-through">{formatCurrency(p.selling_price, currency)}</p>}
+              <p className="font-bold text-ink-900">{formatCurrency(unitPrice(p), currency)}</p>
+              {hasDiscount(p) && <p className="text-xs text-ink-400 line-through">{formatCurrency(p.selling_price, currency)}</p>}
             </Td>
             <Td>
               <span className={cn('inline-flex rounded-full px-2.5 py-1 text-xs font-extrabold', stockBadge(p.stock_quantity, p.low_stock_threshold))}>

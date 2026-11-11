@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
-import { supabase, isSupabaseConfigured, type Product } from '../lib/supabase';
+import { supabase, isSupabaseConfigured, unitPrice, type Product } from '../lib/supabase';
 import { useAuth } from './AuthContext';
 
 export type CartItem = {
@@ -175,7 +175,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const count = items.reduce((s, i) => s + i.quantity, 0);
   const subtotal = items.reduce((s, i) => {
-    const price = i.product.discount_price ?? i.product.selling_price;
+    const price = unitPrice(i.product);
     return s + price * i.quantity;
   }, 0);
 

@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Heart, Minus, Plus, ShoppingBag, Truck, ShieldCheck, RefreshCcw, Star, ArrowLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { getProductById, getRelatedProducts } from '../lib/queries';
-import { type Product, formatCurrency } from '../lib/supabase';
+import { type Product, formatCurrency, hasDiscount } from '../lib/supabase';
 import { useCart } from '../contexts/CartContext';
 import { useToast } from '../contexts/ToastContext';
 import { useSettings } from '../contexts/SettingsContext';
@@ -60,7 +60,7 @@ const ProductDetails: React.FC = () => {
   const outOfStock = product.stock_quantity <= 0;
   const lowStock = product.stock_quantity > 0 && product.stock_quantity <= product.low_stock_threshold;
   const wishlisted = isWishlisted(product.id);
-  const discountPct = product.discount_price ? Math.round((1 - product.discount_price / product.selling_price) * 100) : 0;
+  const discountPct = hasDiscount(product) ? Math.round((1 - (product.discount_price as number) / product.selling_price) * 100) : 0;
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-4 sm:py-8 pb-28 sm:pb-8">
@@ -98,7 +98,7 @@ const ProductDetails: React.FC = () => {
 
           <div className="mt-3 sm:mt-4 flex flex-wrap items-baseline gap-x-3 gap-y-1">
             <span className="text-2xl sm:text-3xl font-extrabold text-ink-900">{formatCurrency(price, currency)}</span>
-            {product.discount_price && (
+            {hasDiscount(product) && (
               <>
                 <span className="text-lg sm:text-xl text-ink-400 line-through">{formatCurrency(product.selling_price, currency)}</span>
                 <Badge color="peach">Save {discountPct}%</Badge>
