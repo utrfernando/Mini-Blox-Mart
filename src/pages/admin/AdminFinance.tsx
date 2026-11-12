@@ -11,10 +11,11 @@ import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { Input, Select, Field } from '../../components/ui/Input';
 
-type Expense = { id: string; expense_date: string; category: string; description: string | null; amount: number; paid_to: string | null; payment_method: string | null; reference: string | null; invoice_path?: string | null; invoice_name?: string | null };
+type Expense = { id: string; expense_date: string; category: string; description: string | null; amount: number; paid_to: string | null; payment_method: string | null; reference: string | null; paid_by?: string | null; invoice_path?: string | null; invoice_name?: string | null };
 type Purchase = { id: string; purchase_date: string; total_cost: number };
 
 const EXPENSE_CATEGORIES = ['Shipping & delivery', 'Packaging', 'Advertising', 'Salaries & wages', 'Rent', 'Utilities', 'Platform & payment fees', 'Software & tools', 'Taxes & licences', 'Other'];
+const PARTNERS = ['Davide', 'Randima'];
 const COLORS = ['#14b8a6', '#f59e0b', '#8b5cf6', '#fb923c', '#2dd4bf', '#fbbf24', '#a78bfa', '#ef4444', '#64748b', '#10b981'];
 const RANGES = [
   { v: 'month', l: 'This month' }, { v: '30', l: 'Last 30 days' }, { v: '90', l: 'Last 90 days' }, { v: 'year', l: 'This year' }, { v: 'all', l: 'All time' },
@@ -35,7 +36,7 @@ const download = (name: string, rows: (string | number)[][]) => {
   a.download = name; a.click(); URL.revokeObjectURL(a.href);
 };
 
-const blank = { expense_date: new Date().toISOString().slice(0, 10), category: EXPENSE_CATEGORIES[0], description: '', amount: '', paid_to: '', payment_method: 'cash', reference: '' };
+const blank = { expense_date: new Date().toISOString().slice(0, 10), category: EXPENSE_CATEGORIES[0], description: '', amount: '', paid_by: '', paid_to: '', payment_method: 'cash', reference: '' };
 
 const AdminFinance: React.FC = () => {
   const { currency } = useSettings();
@@ -114,21 +115,31 @@ const AdminFinance: React.FC = () => {
     return [...m.entries()].map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
   }, [f.exp]);
 
+  const [who, setWho] = useState('all');
+  const byPerson = useMemo(() => {
+    const t: Record<string, number> = { Unassigned: 0 };
+    PARTNERS.forEach(p => { t[p] = 0; });
+    f.exp.forEach(e => { const k = e.paid_by && e.paid_by in t ? e.paid_by : 'Unassigned'; t[k] += Number(e.amount); });
+    return t;
+  }, [f.exp]);
+  const shownExp = who === 'all' ? f.exp : f.exp.filter(e => (who === 'Unassigned' ? !e.paid_by : e.paid_by === who));
+
   const openNew = () => { setEditId(null); setForm(blank); setFile(null); setFormOpen(true); };
   const openEdit = (x: Expense) => {
     setEditId(x.id); setFile(null);
-    setForm({ expense_date: x.expense_date, category: x.category, description: x.description || '', amount: String(x.amount), paid_to: x.paid_to || '', payment_method: x.payment_method || 'cash', reference: x.reference || '' });
+    setForm({ expense_date: x.expense_date, category: x.category, description: x.description || '', amount: String(x.amount), paid_by: x.paid_by || '', paid_to: x.paid_to || '', payment_method: x.payment_method || 'cash', reference: x.reference || '' });
     setFormOpen(true);
   };
 
   const saveExpense = async () => {
     const amount = Number(form.amount);
     if (!(amount >= 0) || form.amount === '') return error('Enter an amount.');
+    if (!form.paid_by) return error('Select who paid this expense (Davide or Randima).');
     setSaving(true);
     try {
       const row: Record<string, unknown> = {
         expense_date: form.expense_date, category: form.category, description: form.description || null, amount,
-        paid_to: form.paid_to || null, payment_method: form.payment_method || null, reference: form.reference || null,
+        paid_by: form.paid_by, paid_to: form.paid_to || null, payment_method: form.payment_method || null, reference: form.reference || null,
       };
       if (file) { const up = await uploadInvoice(file, 'expenses'); row.invoice_path = up.path; row.invoice_name = up.name; }
       if (editId) {
@@ -152,8 +163,8 @@ const AdminFinance: React.FC = () => {
   };
 
   const exportExpenses = () => download(`expenses-${range}.csv`, [
-    ['Date', 'Category', 'Description', 'Amount', 'Paid to', 'Method', 'Reference', 'Invoice file'],
-    ...f.exp.map(e => [e.expense_date, e.category, e.description || '', e.amount, e.paid_to || '', e.payment_method || '', e.reference || '', e.invoice_name || '']),
+    ['Date', 'Category', 'Description', 'Amount', 'Paid by', 'Paid to', 'Method', 'Reference', 'Invoice file'],
+    ...f.exp.map(e => [e.expense_date, e.category, e.description || '', e.amount, e.paid_by || '', e.paid_to || '', e.payment_method || '', e.reference || '', e.invoice_name || '']),
   ]);
   const exportOrders = () => download(`sales-${range}.csv`, [
     ['Order', 'Date', 'Customer', 'Status', 'Payment', 'Method', 'Subtotal', 'Discount', 'Delivery', 'Total'],
@@ -213,13 +224,21 @@ const AdminFinance: React.FC = () => {
           <h3 className="font-display text-xl font-extrabold text-ink-900">Expense ledger</h3>
           <Button variant="ghost" size="sm" onClick={exportExpenses} disabled={!f.exp.length}><Download size={14} /> Export CSV</Button>
         </div>
-        <Table head={['Date', 'Category', 'Description', 'Paid to', 'Ref', 'Invoice', 'Amount', '']}>
-          {f.exp.length === 0 ? <tr><Td className="text-center py-8 text-ink-400">No expenses in this period.</Td></tr> :
-          f.exp.map(e => (
+        <div className="flex flex-wrap gap-2 mb-3">
+          {[['all', 'Everyone', f.expenseTotal], ...PARTNERS.map(p => [p, p, byPerson[p]]), ...(byPerson.Unassigned ? [['Unassigned', 'Unassigned', byPerson.Unassigned]] : [])].map(([k, label, amt]) => (
+            <button key={k as string} onClick={() => setWho(k as string)} className={`rounded-full px-4 py-1.5 text-xs font-extrabold border transition ${who === k ? 'bg-mint-500 border-mint-500 text-white' : 'bg-white border-ink-200 text-ink-600 hover:border-mint-400'}`}>
+              {label as string}: {money(Number(amt))}
+            </button>
+          ))}
+        </div>
+        <Table head={['Date', 'Category', 'Description', 'Paid by', 'Paid to', 'Ref', 'Invoice', 'Amount', '']}>
+          {shownExp.length === 0 ? <tr><Td className="text-center py-8 text-ink-400">No expenses in this period.</Td></tr> :
+          shownExp.map(e => (
             <tr key={e.id} className="hover:bg-ink-50/50">
               <Td className="text-xs text-ink-500">{formatDate(e.expense_date)}</Td>
               <Td className="font-bold text-ink-800">{e.category}</Td>
               <Td className="text-ink-600">{e.description || '—'}</Td>
+              <Td>{e.paid_by ? <span className="inline-block rounded-full bg-lavender-50 text-lavender-600 px-2.5 py-0.5 text-xs font-extrabold">{e.paid_by}</span> : <span className="text-ink-400">—</span>}</Td>
               <Td className="text-ink-600">{e.paid_to || '—'}</Td>
               <Td className="text-xs text-ink-500">{e.reference || '—'}</Td>
               <Td><InvoiceControl table="expenses" id={e.id} path={e.invoice_path} name={e.invoice_name} onChanged={load} /></Td>
@@ -236,6 +255,7 @@ const AdminFinance: React.FC = () => {
           <Field label="Amount"><Input type="number" min="0" step="0.01" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} /></Field>
           <Field label="Category"><Select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })}>{EXPENSE_CATEGORIES.map(c => <option key={c}>{c}</option>)}</Select></Field>
           <Field label="Payment method"><Select value={form.payment_method} onChange={e => setForm({ ...form, payment_method: e.target.value })}><option value="cash">Cash</option><option value="bank">Bank transfer</option><option value="card">Card</option><option value="other">Other</option></Select></Field>
+          <Field label="Paid by (who spent it)"><Select value={form.paid_by} onChange={e => setForm({ ...form, paid_by: e.target.value })}><option value="">Select person…</option>{PARTNERS.map(p => <option key={p} value={p}>{p}</option>)}</Select></Field>
           <Field label="Paid to"><Input value={form.paid_to} onChange={e => setForm({ ...form, paid_to: e.target.value })} /></Field>
           <Field label="Receipt / invoice no."><Input value={form.reference} onChange={e => setForm({ ...form, reference: e.target.value })} /></Field>
           <div className="sm:col-span-2">
