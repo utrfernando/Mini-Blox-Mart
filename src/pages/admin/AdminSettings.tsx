@@ -36,6 +36,18 @@ const AdminSettings: React.FC = () => {
 
       <section className="rounded-4xl border border-ink-100 bg-white p-6 shadow-soft">
         <h2 className="font-display text-lg font-extrabold text-ink-900 mb-4">Store Information</h2>
+        <div className={`mb-5 rounded-3xl border-2 p-4 ${store.checkout_enabled === false ? 'border-red-200 bg-red-50' : 'border-mint-200 bg-mint-50'}`}>
+          <label className="flex items-center justify-between gap-4 cursor-pointer">
+            <span>
+              <span className="block font-extrabold text-ink-900">{store.checkout_enabled === false ? 'Checkout is STOPPED' : 'Checkout is open'}</span>
+              <span className="block text-xs font-semibold text-ink-500">Turn off to stop customers placing new orders. Browsing still works. Remember to press Save Store Settings.</span>
+            </span>
+            <input type="checkbox" className="h-6 w-6 accent-teal-500" checked={store.checkout_enabled !== false} onChange={e => setStore({ ...store, checkout_enabled: e.target.checked })} />
+          </label>
+          {store.checkout_enabled === false && (
+            <div className="mt-3"><Field label="Message shown to customers"><Input value={store.checkout_message || ''} onChange={e => setStore({ ...store, checkout_message: e.target.value })} placeholder="We're restocking – orders reopen soon." /></Field></div>
+          )}
+        </div>
         <div className="grid sm:grid-cols-2 gap-4">
           <Field label="Store Name"><Input value={store.store_name || ''} onChange={e => setStore({ ...store, store_name: e.target.value })} /></Field>
           <Field label="Tagline"><Input value={store.tagline || ''} onChange={e => setStore({ ...store, tagline: e.target.value })} /></Field>

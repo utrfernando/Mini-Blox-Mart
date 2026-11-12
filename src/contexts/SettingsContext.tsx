@@ -14,6 +14,8 @@ interface SettingsContextType {
   currencySymbol: string;
   deliveryFee: number;
   freeDeliveryThreshold: number;
+  checkoutEnabled: boolean;
+  checkoutMessage: string;
   refresh: () => Promise<void>;
 }
 
@@ -82,6 +84,8 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     currencySymbol: store.currency_symbol || 'Rs.',
     deliveryFee: Number(store.delivery_fee ?? 250),
     freeDeliveryThreshold: Number(store.free_delivery_threshold ?? 1500),
+    checkoutEnabled: store.checkout_enabled !== false,
+    checkoutMessage: store.checkout_message || 'Checkout is temporarily paused. Please check back soon.',
     refresh,
   };
 

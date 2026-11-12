@@ -32,7 +32,7 @@ const DISTRICTS = ['Colombo','Gampaha','Kalutara','Kandy','Matale','Nuwara Eliya
 const Checkout: React.FC = () => {
   const { items, clearCart } = useCart();
   const { user } = useAuth();
-  const { settings, currency } = useSettings();
+  const { settings, currency, checkoutEnabled, checkoutMessage } = useSettings();
   const { success, error: toastError } = useToast();
   const navigate = useNavigate();
 
@@ -57,6 +57,10 @@ const Checkout: React.FC = () => {
   });
 
   const payload = useMemo(() => items.map(i => ({ product_id: i.product.id, quantity: i.quantity })), [items]);
+
+  if (!checkoutEnabled && !placedOrder) {
+    return <EmptyState title="Checkout is paused" message={checkoutMessage} actionLabel="Back to Cart" onAction={() => navigate('/cart')} />;
+  }
 
   if (items.length === 0 && !placedOrder) {
     return <EmptyState title="Nothing to check out" message="Your cart is empty." actionLabel="Browse Products" onAction={() => navigate('/shop')} />;

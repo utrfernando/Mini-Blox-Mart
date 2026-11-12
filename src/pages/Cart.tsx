@@ -29,7 +29,7 @@ export const useCartTotals = (items: { product: any; quantity: number }[], disco
 const Cart: React.FC = () => {
   const { items, setQuantity, removeFromCart } = useCart();
   const { user } = useAuth();
-  const { currency } = useSettings();
+  const { currency, checkoutEnabled, checkoutMessage } = useSettings();
   const { success } = useToast();
   const navigate = useNavigate();
   const [code, setCode] = useState('');
@@ -135,7 +135,8 @@ const Cart: React.FC = () => {
               </div>
             )}
 
-            <Button size="lg" className="w-full" onClick={() => {
+            {!checkoutEnabled && <p className="rounded-2xl bg-red-50 px-4 py-2.5 text-sm font-bold text-red-600">{checkoutMessage}</p>}
+            <Button size="lg" className="w-full" disabled={!checkoutEnabled} onClick={() => {
               if (!user) { navigate('/login?next=/checkout'); return; }
               navigate('/checkout');
             }}>

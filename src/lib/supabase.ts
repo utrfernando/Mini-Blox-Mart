@@ -219,6 +219,8 @@ export type WebsiteSettings = {
     currency_symbol?: string;
     delivery_fee?: number;
     free_delivery_threshold?: number;
+    checkout_enabled?: boolean;
+    checkout_message?: string;
     contact_email?: string;
     contact_phone?: string;
     whatsapp?: string;
