@@ -65,7 +65,7 @@ const ProductCard: React.FC<{ product: Product; index?: number }> = ({ product, 
       </button>
 
       <div className="flex flex-col flex-1 p-3 sm:p-4">
-        <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wide sm:tracking-wider text-mint-600 truncate">{product.category?.name || 'Miniblox'}</p>
+        <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wide sm:tracking-wider text-mint-600 truncate">{product.category?.name || 'MinibloxRC'}</p>
         <Link to={`/product/${product.id}`} className="font-display font-bold text-ink-900 text-sm sm:text-base leading-snug break-words line-clamp-2 mt-0.5 hover:text-mint-600 transition-colors">
           {product.name}
         </Link>

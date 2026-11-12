@@ -1,11 +1,11 @@
-# Miniblox — E-Commerce Platform
+# MinibloxRC — E-Commerce Platform
 
 **Small Things. Big Smiles.** A complete, database-connected online store for mini building-block figures, collectible toys, flower-building sets and creative gifts in Sri Lanka.
 
 ## Tech Stack
 
 - **React 19 + Vite + TypeScript**
-- **Tailwind CSS** (custom Miniblox palette: mint, sunshine, cream, peach, lavender)
+- **Tailwind CSS** (custom MinibloxRC palette: mint, sunshine, cream, peach, lavender)
 - **Supabase** — Auth, PostgreSQL, Storage, Row Level Security
 - **React Router**, **React Hook Form + Zod**, **Framer Motion**, **Recharts**, **Lucide icons**
 

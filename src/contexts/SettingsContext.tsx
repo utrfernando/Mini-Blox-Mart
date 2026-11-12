@@ -27,7 +27,7 @@ export const useSettings = () => {
 
 const DEFAULT_SETTINGS: WebsiteSettings = {
   store: {
-    store_name: 'Miniblox',
+    store_name: 'MinibloxRC',
     tagline: 'Small Things. Big Smiles.',
     currency: 'LKR',
     currency_symbol: 'Rs.',
@@ -76,7 +76,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const store = settings.store || {};
   const value: SettingsContextType = {
     settings, sections, banners, loading, sectionVisible, sectionByKey,
-    storeName: store.store_name || 'Miniblox',
+    storeName: store.store_name || 'MinibloxRC',
     tagline: store.tagline || 'Small Things. Big Smiles.',
     currency: store.currency || 'LKR',
     currencySymbol: store.currency_symbol || 'Rs.',

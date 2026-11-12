@@ -30,7 +30,7 @@ export const About: React.FC = () => {
       <PageHeader title={`About ${storeName}`} subtitle={tagline} />
       <Prose>
         <p><strong>{storeName}</strong> started with a simple belief: the smallest things can bring the biggest smiles. We design and curate adorable mini building-block figures, build-it-yourself flower collections and creative gifts that spark imagination — whether you're a collector, a parent, or just someone who loves cute things.</p>
-        <p>Every product in our store is hand-picked for quality, safety and that unmistakable Miniblox charm. From tiny characters you can pose and play with, to flower sets that let you craft your own bouquets — there's a little world waiting for everyone.</p>
+        <p>Every product in our store is hand-picked for quality, safety and that unmistakable MinibloxRC charm. From tiny characters you can pose and play with, to flower sets that let you craft your own bouquets — there's a little world waiting for everyone.</p>
         <p>We're proud to be a Sri Lankan brand, and we deliver our happiness island-wide with care. Thank you for being part of the {storeName} community — small things, big smiles.</p>
       </Prose>
     </div>
@@ -187,9 +187,9 @@ export const Terms: React.FC = () => (
   <div>
     <PageHeader title="Terms & Conditions" subtitle="The fine print, friendly version" />
     <Prose>
-      <p>By shopping at Miniblox you agree to these terms. Prices are in Sri Lankan Rupees (LKR) and include applicable taxes unless stated otherwise.</p>
+      <p>By shopping at MinibloxRC you agree to these terms. Prices are in Sri Lankan Rupees (LKR) and include applicable taxes unless stated otherwise.</p>
       <p>We make every effort to keep product information accurate, but colours may vary slightly between screens. Stock is limited — orders are confirmed subject to availability.</p>
-      <p>Miniblox reserves the right to cancel orders with pricing errors, update these terms, and refuse service where necessary. Sri Lankan law governs these terms.</p>
+      <p>MinibloxRC reserves the right to cancel orders with pricing errors, update these terms, and refuse service where necessary. Sri Lankan law governs these terms.</p>
     </Prose>
   </div>
 );

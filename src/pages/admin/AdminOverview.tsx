@@ -106,7 +106,7 @@ const AdminOverview: React.FC = () => {
     Object.entries(byDay).sort().forEach(([d, v]) => rows.push([d, String(v.count), v.revenue.toFixed(2)]));
     const blob = new Blob([rows.map(r => r.join(',')).join('\n')], { type: 'text/csv' });
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob); a.download = 'miniblox-sales-report.csv'; a.click();
+    a.href = URL.createObjectURL(blob); a.download = 'minibloxrc-sales-report.csv'; a.click();
   };
 
   if (loading) return <div className="space-y-4">{[1, 2].map(i => <Skeleton key={i} className="h-40" />)}</div>;
