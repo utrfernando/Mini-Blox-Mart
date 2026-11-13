@@ -15,6 +15,7 @@ interface SettingsContextType {
   deliveryFee: number;
   freeDeliveryThreshold: number;
   checkoutEnabled: boolean;
+  supportBotEnabled: boolean;
   checkoutMessage: string;
   refresh: () => Promise<void>;
 }
@@ -110,6 +111,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     deliveryFee: Number(store.delivery_fee ?? 250),
     freeDeliveryThreshold: Number(store.free_delivery_threshold ?? 1500),
     checkoutEnabled: store.checkout_enabled !== false,
+    supportBotEnabled: store.support_bot_enabled !== false,
     checkoutMessage: store.checkout_message || 'Checkout is temporarily paused. Please check back soon.',
     refresh,
   };

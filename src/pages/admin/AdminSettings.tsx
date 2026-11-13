@@ -48,6 +48,15 @@ const AdminSettings: React.FC = () => {
             <div className="mt-3"><Field label="Message shown to customers"><Input value={store.checkout_message || ''} onChange={e => setStore({ ...store, checkout_message: e.target.value })} placeholder="We're restocking – orders reopen soon." /></Field></div>
           )}
         </div>
+        <div className="mb-5 rounded-3xl border-2 border-ink-100 p-4">
+          <label className="flex items-center justify-between gap-4 cursor-pointer">
+            <span>
+              <span className="block font-extrabold text-ink-900">Support chat helper</span>
+              <span className="block text-xs font-semibold text-ink-500">The chat bubble on the shop that answers delivery, payment and order questions. Messages it collects arrive in Admin &gt; Messages.</span>
+            </span>
+            <input type="checkbox" className="h-6 w-6 accent-teal-500" checked={store.support_bot_enabled !== false} onChange={e => setStore({ ...store, support_bot_enabled: e.target.checked })} />
+          </label>
+        </div>
         <div className="grid sm:grid-cols-2 gap-4">
           <Field label="Store Name"><Input value={store.store_name || ''} onChange={e => setStore({ ...store, store_name: e.target.value })} /></Field>
           <Field label="Tagline"><Input value={store.tagline || ''} onChange={e => setStore({ ...store, tagline: e.target.value })} /></Field>

@@ -319,7 +319,11 @@ const Footer: React.FC = () => {
 // ------------------------------------------------------------------
 // Layout
 // ------------------------------------------------------------------
-const StoreLayout: React.FC = () => (
+const SupportBot = React.lazy(() => import('../SupportBot'));
+
+const StoreLayout: React.FC = () => {
+  const { supportBotEnabled } = useSettings();
+  return (
   <div className="flex flex-col min-h-screen bg-cream-50">
     <AnnouncementBar />
     <Header />
@@ -327,7 +331,9 @@ const StoreLayout: React.FC = () => (
       <Outlet />
     </main>
     <Footer />
+    {supportBotEnabled && <React.Suspense fallback={null}><SupportBot /></React.Suspense>}
   </div>
-);
+  );
+};
 
 export default StoreLayout;

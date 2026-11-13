@@ -220,6 +220,7 @@ export type WebsiteSettings = {
     delivery_fee?: number;
     free_delivery_threshold?: number;
     checkout_enabled?: boolean;
+    support_bot_enabled?: boolean;
     checkout_message?: string;
     contact_email?: string;
     contact_phone?: string;
