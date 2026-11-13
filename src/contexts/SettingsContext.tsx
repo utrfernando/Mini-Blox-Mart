@@ -45,11 +45,21 @@ const DEFAULT_SETTINGS: WebsiteSettings = {
   branding: { logo_url: '', favicon_url: '', primary_color: '#14b8a6', secondary_color: '#f59e0b', font: 'Nunito' },
 };
 
+// Settings, homepage sections and banners rarely change, so keep a copy in the browser.
+// Visitors see the page instantly and we skip 3 database calls on most page loads.
+const CACHE_KEY = 'minibloxrc_settings_v1';
+const CACHE_TTL_MS = 5 * 60 * 1000;
+type Cached = { t: number; settings: WebsiteSettings; sections: HomepageSection[]; banners: Banner[] };
+const readCache = (): Cached | null => {
+  try { const raw = localStorage.getItem(CACHE_KEY); return raw ? (JSON.parse(raw) as Cached) : null; } catch { return null; }
+};
+
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [settings, setSettings] = useState<WebsiteSettings>(DEFAULT_SETTINGS);
-  const [sections, setSections] = useState<HomepageSection[]>([]);
-  const [banners, setBanners] = useState<Banner[]>([]);
-  const [loading, setLoading] = useState(true);
+  const cached = React.useRef(readCache()).current;
+  const [settings, setSettings] = useState<WebsiteSettings>(cached?.settings || DEFAULT_SETTINGS);
+  const [sections, setSections] = useState<HomepageSection[]>(cached?.sections || []);
+  const [banners, setBanners] = useState<Banner[]>(cached?.banners || []);
+  const [loading, setLoading] = useState(!cached);
 
   const refresh = useCallback(async () => {
     if (!isSupabaseConfigured) { setLoading(false); return; }
@@ -68,9 +78,17 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (sec.data) setSections(sec.data as HomepageSection[]);
     if (ban.data) setBanners(ban.data as Banner[]);
     setLoading(false);
+    try {
+      if (s.data?.length && sec.data && ban.data) {
+        const merged: WebsiteSettings = { ...DEFAULT_SETTINGS };
+        for (const row of s.data) (merged as any)[row.setting_key] = row.setting_value;
+        localStorage.setItem(CACHE_KEY, JSON.stringify({ t: Date.now(), settings: merged, sections: sec.data, banners: ban.data }));
+      }
+    } catch { /* storage full or blocked - fine */ }
   }, []);
 
-  useEffect(() => { refresh(); }, [refresh]);
+  // Fresh cache -> no network call. Admin pages call refresh() after saving, which always fetches.
+  useEffect(() => { if (!cached || Date.now() - cached.t > CACHE_TTL_MS) refresh(); else setLoading(false); }, [refresh, cached]);
 
   // Tab icon: admin-uploaded favicon (Admin > Website > Branding) overrides the built-in one.
   const faviconUrl = settings.branding?.favicon_url;

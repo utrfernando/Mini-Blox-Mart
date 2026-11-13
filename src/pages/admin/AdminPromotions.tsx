@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Plus, Pencil, Trash2, Image as ImageIcon } from 'lucide-react';
 import { supabase, formatDate, type Banner } from '../../lib/supabase';
+import { optimizeImage, IMAGE_CACHE } from '../../lib/image';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { AdminHeader, Table, Td } from '../../components/admin/ui';
@@ -35,9 +36,9 @@ const AdminPromotions: React.FC = () => {
   const uploadImage = async (file: File) => {
     if (!authUserId) return;
     setUploading(true);
-    const ext = file.name.split('.').pop();
-    const path = `banners/${authUserId}/${Date.now()}.${ext}`;
-    const { error: e } = await supabase.storage.from('products').upload(path, file);
+    const img = await optimizeImage(file, 1800);
+    const path = `banners/${authUserId}/${Date.now()}.${img.ext}`;
+    const { error: e } = await supabase.storage.from('products').upload(path, img.blob, { contentType: img.type, cacheControl: IMAGE_CACHE });
     if (e) { error(e.message); setUploading(false); return; }
     setForm((f: any) => ({ ...f, image_url: supabase.storage.from('products').getPublicUrl(path).data.publicUrl }));
     setUploading(false);

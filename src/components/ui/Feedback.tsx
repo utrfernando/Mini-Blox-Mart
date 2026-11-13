@@ -4,7 +4,7 @@ import { Button } from './Button';
 
 export const ProductImage: React.FC<{ src?: string | null; alt?: string; className?: string; iconClassName?: string }> = ({ src, alt, className = '', iconClassName = 'w-16 h-16' }) => {
   if (src) {
-    return <img src={src} alt={alt || 'Product'} className={`object-cover w-full h-full ${className}`} loading="lazy" />;
+    return <img src={src} alt={alt || 'Product'} className={`object-cover w-full h-full ${className}`} loading="lazy" decoding="async" />;
   }
   return (
     <div className={`w-full h-full flex items-center justify-center bg-gradient-to-br from-mint-100 via-cream-100 to-lavender-100 ${className}`}>

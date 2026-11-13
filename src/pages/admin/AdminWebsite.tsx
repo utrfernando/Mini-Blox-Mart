@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowUp, ArrowDown, Eye, EyeOff, Save, Palette } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { optimizeImage, IMAGE_CACHE } from '../../lib/image';
 import { type HomepageSection, type WebsiteSettings } from '../../lib/supabase';
 import { useSettings } from '../../contexts/SettingsContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -31,9 +32,9 @@ const AdminWebsite: React.FC = () => {
     if (!file.type.startsWith('image/')) return error('Please choose an image file.');
     setUploading(key);
     try {
-      const ext = file.name.split('.').pop() || 'png';
-      const path = `branding/${key}-${Date.now()}.${ext}`;
-      const { error: e } = await supabase.storage.from('products').upload(path, file, { upsert: true });
+      const img = key === 'logo_url' ? await optimizeImage(file, 600) : { blob: file as Blob, ext: file.name.split('.').pop() || 'png', type: file.type };
+      const path = `branding/${key}-${Date.now()}.${img.ext}`;
+      const { error: e } = await supabase.storage.from('products').upload(path, img.blob, { upsert: true, contentType: img.type, cacheControl: IMAGE_CACHE });
       if (e) throw e;
       const url = supabase.storage.from('products').getPublicUrl(path).data.publicUrl;
       setBranding(b => ({ ...b, [key]: url }));

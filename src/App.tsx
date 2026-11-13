@@ -1,41 +1,51 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { CartProvider } from './contexts/CartContext';
 import { SettingsProvider } from './contexts/SettingsContext';
 import { ToastProvider } from './contexts/ToastContext';
 import StoreLayout from './components/layout/StoreLayout';
-import AdminLayout from './components/layout/AdminLayout';
-import AccountLayout from './pages/account/AccountLayout';
-
 import Home from './pages/Home';
-import Shop from './pages/Shop';
-import ProductDetails from './pages/ProductDetails';
-import Cart from './pages/Cart';
-import Checkout from './pages/Checkout';
-import Wishlist from './pages/Wishlist';
-import Login from './pages/Login';
-import ResetPassword from './pages/ResetPassword';
-import Register from './pages/Register';
-import { Contact, About, FAQ, ShippingPolicy, ReturnPolicy, PrivacyPolicy, Terms } from './pages/InfoPages';
-import Profile from './pages/account/Profile';
-import Orders from './pages/account/Orders';
-import OrderDetail from './pages/account/OrderDetail';
-import Addresses from './pages/account/Addresses';
 
-import AdminOverview from './pages/admin/AdminOverview';
-import AdminProducts from './pages/admin/AdminProducts';
-import AdminCategories from './pages/admin/AdminCategories';
-import AdminInventory from './pages/admin/AdminInventory';
-import AdminOrders from './pages/admin/AdminOrders';
-import AdminCustomers from './pages/admin/AdminCustomers';
-import AdminDiscounts from './pages/admin/AdminDiscounts';
-import AdminPromotions from './pages/admin/AdminPromotions';
-import AdminMessages from './pages/admin/AdminMessages';
-import AdminWebsite from './pages/admin/AdminWebsite';
-import AdminSettings from './pages/admin/AdminSettings';
-import AdminUsers from './pages/admin/AdminUsers';
-import AdminFinance from './pages/admin/AdminFinance';
+// Everything except the home page is loaded on demand, so first visits download far less code.
+const AdminLayout = lazy(() => import('./components/layout/AdminLayout'));
+const AccountLayout = lazy(() => import('./pages/account/AccountLayout'));
+const Shop = lazy(() => import('./pages/Shop'));
+const ProductDetails = lazy(() => import('./pages/ProductDetails'));
+const Cart = lazy(() => import('./pages/Cart'));
+const Checkout = lazy(() => import('./pages/Checkout'));
+const Wishlist = lazy(() => import('./pages/Wishlist'));
+const Login = lazy(() => import('./pages/Login'));
+const Register = lazy(() => import('./pages/Register'));
+const ResetPassword = lazy(() => import('./pages/ResetPassword'));
+const Profile = lazy(() => import('./pages/account/Profile'));
+const Orders = lazy(() => import('./pages/account/Orders'));
+const OrderDetail = lazy(() => import('./pages/account/OrderDetail'));
+const Addresses = lazy(() => import('./pages/account/Addresses'));
+const named = <K extends string>(load: () => Promise<Record<K, React.ComponentType>>, key: K) => lazy(() => load().then(m => ({ default: m[key] })));
+const Contact = named(() => import('./pages/InfoPages'), 'Contact');
+const About = named(() => import('./pages/InfoPages'), 'About');
+const FAQ = named(() => import('./pages/InfoPages'), 'FAQ');
+const ShippingPolicy = named(() => import('./pages/InfoPages'), 'ShippingPolicy');
+const ReturnPolicy = named(() => import('./pages/InfoPages'), 'ReturnPolicy');
+const PrivacyPolicy = named(() => import('./pages/InfoPages'), 'PrivacyPolicy');
+const Terms = named(() => import('./pages/InfoPages'), 'Terms');
+
+const AdminOverview = lazy(() => import('./pages/admin/AdminOverview'));
+const AdminProducts = lazy(() => import('./pages/admin/AdminProducts'));
+const AdminCategories = lazy(() => import('./pages/admin/AdminCategories'));
+const AdminInventory = lazy(() => import('./pages/admin/AdminInventory'));
+const AdminOrders = lazy(() => import('./pages/admin/AdminOrders'));
+const AdminCustomers = lazy(() => import('./pages/admin/AdminCustomers'));
+const AdminDiscounts = lazy(() => import('./pages/admin/AdminDiscounts'));
+const AdminPromotions = lazy(() => import('./pages/admin/AdminPromotions'));
+const AdminMessages = lazy(() => import('./pages/admin/AdminMessages'));
+const AdminWebsite = lazy(() => import('./pages/admin/AdminWebsite'));
+const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'));
+const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'));
+const AdminFinance = lazy(() => import('./pages/admin/AdminFinance'));
+
+const PageLoading: React.FC = () => <div className="flex-1 flex items-center justify-center py-32 text-ink-400 font-bold">Loading…</div>;
 
 // ------------------------------------------------------------------
 const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -80,6 +90,7 @@ const App: React.FC = () => {
         <CartProvider>
           <ToastProvider>
             <Router>
+              <Suspense fallback={<PageLoading />}>
               <Routes>
                 <Route element={<StoreLayout />}>
                   <Route path="/" element={<Home />} />
@@ -118,6 +129,7 @@ const App: React.FC = () => {
 
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
+              </Suspense>
             </Router>
           </ToastProvider>
         </CartProvider>

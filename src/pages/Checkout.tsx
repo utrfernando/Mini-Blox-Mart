@@ -32,7 +32,8 @@ const DISTRICTS = ['Colombo','Gampaha','Kalutara','Kandy','Matale','Nuwara Eliya
 const Checkout: React.FC = () => {
   const { items, clearCart } = useCart();
   const { user } = useAuth();
-  const { settings, currency, checkoutEnabled, checkoutMessage } = useSettings();
+  const { settings, currency, checkoutEnabled, checkoutMessage, refresh } = useSettings();
+  React.useEffect(() => { refresh(); }, [refresh]);
   const { success, error: toastError } = useToast();
   const navigate = useNavigate();
 

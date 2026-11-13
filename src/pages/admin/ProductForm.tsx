@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Trash2, Upload, Star, Sparkles, Image as ImageIcon } from 'lucide-react';
+import { optimizeImage, IMAGE_CACHE } from '../../lib/image';
 import { supabase, type Product, type Category, type Supplier } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
@@ -79,9 +80,9 @@ const ProductForm: React.FC<Props> = ({ open, onClose, product, onSaved }) => {
     if (!files?.length || !authUserId) return;
     setUploading(true);
     for (const file of Array.from(files)) {
-      const ext = file.name.split('.').pop();
-      const path = `products/${authUserId}/${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${ext}`;
-      const { error: upErr } = await supabase.storage.from('products').upload(path, file);
+      const img = await optimizeImage(file);
+      const path = `products/${authUserId}/${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${img.ext}`;
+      const { error: upErr } = await supabase.storage.from('products').upload(path, img.blob, { contentType: img.type, cacheControl: IMAGE_CACHE });
       if (upErr) { error(`Upload failed: ${upErr.message}`); continue; }
       const url = supabase.storage.from('products').getPublicUrl(path).data.publicUrl;
       setImages(prev => [...prev, { url, is_primary: prev.length === 0 }]);

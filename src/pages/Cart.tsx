@@ -29,7 +29,9 @@ export const useCartTotals = (items: { product: any; quantity: number }[], disco
 const Cart: React.FC = () => {
   const { items, setQuantity, removeFromCart } = useCart();
   const { user } = useAuth();
-  const { currency, checkoutEnabled, checkoutMessage } = useSettings();
+  const { currency, checkoutEnabled, checkoutMessage, refresh } = useSettings();
+  // settings are cached in the browser; re-check here so a paused checkout is never missed
+  React.useEffect(() => { refresh(); }, [refresh]);
   const { success } = useToast();
   const navigate = useNavigate();
   const [code, setCode] = useState('');
