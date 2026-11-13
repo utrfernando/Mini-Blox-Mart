@@ -10,12 +10,20 @@ import { AdminHeader, StatCard, Table, Td } from '../../components/admin/ui';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { Input, Select, Field } from '../../components/ui/Input';
+import { PARTNERS, EXPENSE_CATEGORIES, type Expense, type PartnerTx, type OrderCost, type Budget, type Recurring, type Lock } from '../../lib/finance';
+import { PartnersPanel } from '../../components/admin/finance/PartnersPanel';
+import { BudgetsPanel } from '../../components/admin/finance/BudgetsPanel';
+import { RecurringPanel } from '../../components/admin/finance/RecurringPanel';
+import { SupplierPanel, owedOn, type PurchasePay } from '../../components/admin/finance/SupplierPanel';
+import { ProfitPanel } from '../../components/admin/finance/ProfitPanel';
+import { RecordsPanel } from '../../components/admin/finance/RecordsPanel';
 
-type Expense = { id: string; expense_date: string; category: string; description: string | null; amount: number; paid_to: string | null; payment_method: string | null; reference: string | null; paid_by?: string | null; invoice_path?: string | null; invoice_name?: string | null };
-type Purchase = { id: string; purchase_date: string; total_cost: number };
+type Tab = 'overview' | 'expenses' | 'partners' | 'suppliers' | 'profit' | 'records';
+const TABS: { k: Tab; l: string }[] = [
+  { k: 'overview', l: 'Overview' }, { k: 'expenses', l: 'Expenses' }, { k: 'partners', l: 'Partners' },
+  { k: 'suppliers', l: 'Suppliers' }, { k: 'profit', l: 'Profit reports' }, { k: 'records', l: 'Records & backup' },
+];
 
-const EXPENSE_CATEGORIES = ['Shipping & delivery', 'Packaging', 'Advertising', 'Salaries & wages', 'Rent', 'Utilities', 'Platform & payment fees', 'Software & tools', 'Taxes & licences', 'Other'];
-const PARTNERS = ['Davide', 'Randima'];
 const COLORS = ['#14b8a6', '#f59e0b', '#8b5cf6', '#fb923c', '#2dd4bf', '#fbbf24', '#a78bfa', '#ef4444', '#64748b', '#10b981'];
 const RANGES = [
   { v: 'month', l: 'This month' }, { v: '30', l: 'Last 30 days' }, { v: '90', l: 'Last 90 days' }, { v: 'year', l: 'This year' }, { v: 'all', l: 'All time' },
@@ -48,7 +56,15 @@ const AdminFinance: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [purchases, setPurchases] = useState<Purchase[]>([]);
+  const [purchases, setPurchases] = useState<PurchasePay[]>([]);
+  const [tab, setTab] = useState<Tab>('overview');
+  const [txs, setTxs] = useState<PartnerTx[]>([]);
+  const [orderCosts, setOrderCosts] = useState<OrderCost[]>([]);
+  const [budgets, setBudgets] = useState<Budget[]>([]);
+  const [recurring, setRecurring] = useState<Recurring[]>([]);
+  const [locks, setLocks] = useState<Lock[]>([]);
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
+  const [suiteMissing, setSuiteMissing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [missingTable, setMissingTable] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
@@ -58,17 +74,30 @@ const AdminFinance: React.FC = () => {
   const [saving, setSaving] = useState(false);
 
   const load = async () => {
-    const [o, p, e, pu] = await Promise.all([
+    const [o, p, e, pu, pt, oc, bu, rc, lk, ca] = await Promise.all([
       supabase.from('orders').select('*, items:order_items(*)').order('placed_at', { ascending: false }),
-      supabase.from('products').select('id,name,stock_quantity,' + PRODUCT_COSTS_EMBED),
+      supabase.from('products').select('id,name,stock_quantity,category_id,' + PRODUCT_COSTS_EMBED),
       supabase.from('expenses').select('*').order('expense_date', { ascending: false }),
-      supabase.from('purchases').select('id,purchase_date,total_cost'),
+      supabase.from('purchases').select('*, supplier:suppliers(*)').order('purchase_date', { ascending: false }),
+      supabase.from('partner_transactions').select('*').order('tx_date', { ascending: false }),
+      supabase.from('order_costs').select('*'),
+      supabase.from('expense_budgets').select('*'),
+      supabase.from('recurring_expenses').select('*').order('created_at'),
+      supabase.from('finance_locks').select('*').order('month', { ascending: false }),
+      supabase.from('categories').select('id,name'),
     ]);
+    setSuiteMissing(!!pt.error);
+    setTxs((pt.data || []) as PartnerTx[]);
+    setOrderCosts((oc.data || []) as OrderCost[]);
+    setBudgets((bu.data || []) as Budget[]);
+    setRecurring((rc.data || []) as Recurring[]);
+    setLocks((lk.data || []) as Lock[]);
+    setCategories((ca.data || []) as { id: string; name: string }[]);
     setOrders((o.data || []) as Order[]);
     setProducts(withCosts(p.data) as Product[]);
     setMissingTable(!!e.error);
     setExpenses((e.data || []) as Expense[]);
-    setPurchases((pu.data || []) as Purchase[]);
+    setPurchases((pu.data || []) as PurchasePay[]);
     setLoading(false);
   };
   useEffect(() => { load(); }, []);
@@ -89,12 +118,15 @@ const AdminFinance: React.FC = () => {
     const exp = expenses.filter(e => inRange(e.expense_date));
     const expenseTotal = exp.reduce((s, e) => s + Number(e.amount), 0);
     const purchaseSpend = purchases.filter(p => inRange(p.purchase_date)).reduce((s, p) => s + Number(p.total_cost), 0);
+    const costMap = new Map(orderCosts.map(c => [c.order_id, c]));
+    const orderCostTotal = valid.reduce((s, o) => s + Number(costMap.get(o.id)?.delivery_cost || 0) + Number(costMap.get(o.id)?.payment_fee || 0), 0);
+    const owedSuppliers = purchases.reduce((s, p) => s + owedOn(p), 0);
     const gross = revenue - cogs;
-    const net = gross - expenseTotal;
+    const net = gross - orderCostTotal - expenseTotal;
     const inventoryValue = products.reduce((s, p) => s + Number(p.landed_cost || p.supplier_cost || 0) * p.stock_quantity, 0);
     const margin = revenue > 0 ? (net / revenue) * 100 : 0;
-    return { valid, revenue, collected, outstanding, cogs, exp, expenseTotal, purchaseSpend, gross, net, inventoryValue, margin };
-  }, [orders, products, expenses, purchases, range]);
+    return { valid, revenue, collected, outstanding, cogs, exp, expenseTotal, purchaseSpend, gross, net, inventoryValue, margin, orderCostTotal, owedSuppliers };
+  }, [orders, products, expenses, purchases, orderCosts, range]);
 
   const monthly = useMemo(() => {
     const productMap = new Map(products.map(p => [p.id, p]));
@@ -104,10 +136,12 @@ const AdminFinance: React.FC = () => {
       const r = row(o.placed_at);
       r.Revenue += Number(o.total_amount);
       r.Costs += (o.items || []).reduce((a, i) => { const p = i.product_id ? productMap.get(i.product_id) : undefined; return a + Number(p?.landed_cost || p?.supplier_cost || 0) * i.quantity; }, 0);
+      const oc = orderCosts.find(c => c.order_id === o.id);
+      r.Costs += Number(oc?.delivery_cost || 0) + Number(oc?.payment_fee || 0);
     });
     expenses.filter(e => inRange(e.expense_date)).forEach(e => { row(e.expense_date).Costs += Number(e.amount); });
     return [...m.values()].sort((a, b) => a.month.localeCompare(b.month)).map(r => ({ ...r, Revenue: Math.round(r.Revenue), Costs: Math.round(r.Costs), Profit: Math.round(r.Revenue - r.Costs) }));
-  }, [orders, products, expenses, range]);
+  }, [orders, products, expenses, orderCosts, range]);
 
   const byCategory = useMemo(() => {
     const m = new Map<string, number>();
@@ -187,7 +221,21 @@ const AdminFinance: React.FC = () => {
         </div>
       )}
 
+      {suiteMissing && !missingTable && (
+        <div className="mb-6 rounded-3xl bg-sunshine-50 border border-sunshine-200 p-4 text-sm text-ink-800 flex gap-3">
+          <AlertTriangle className="shrink-0 text-sunshine-600" />
+          <span>The new finance tools (partners, budgets, recurring, locks, history, supplier payments) need <code>supabase/migrations/0009_finance_suite.sql</code>. Paste it in Supabase <b>SQL Editor</b> and run it, then refresh.</span>
+        </div>
+      )}
+
+      <div className="flex gap-2 overflow-x-auto pb-2 mb-5 -mx-1 px-1">
+        {TABS.map(t => (
+          <button key={t.k} onClick={() => setTab(t.k)} className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-extrabold border transition ${tab === t.k ? 'bg-mint-500 border-mint-500 text-white shadow-soft' : 'bg-white border-ink-200 text-ink-600 hover:border-mint-400'}`}>{t.l}</button>
+        ))}
+      </div>
+
       {loading ? <p className="text-ink-400">Loading…</p> : <>
+        {tab === 'overview' && <>
         <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
           <StatCard label="Revenue" value={money(f.revenue)} icon={<Banknote size={20} />} tone="mint" hint={`${f.valid.length} orders`} />
           <StatCard label="Gross profit" value={money(f.gross)} icon={<TrendingUp size={20} />} tone="lavender" hint={`Cost of goods ${money(f.cogs)}`} />
@@ -197,6 +245,8 @@ const AdminFinance: React.FC = () => {
           <StatCard label="Outstanding" value={money(f.outstanding)} icon={<AlertTriangle size={20} />} tone="sunshine" hint="Unpaid / COD pending" />
           <StatCard label="Stock purchases" value={money(f.purchaseSpend)} icon={<Truck size={20} />} tone="ink" hint="From supplier purchases" />
           <StatCard label="Inventory value" value={money(f.inventoryValue)} icon={<Boxes size={20} />} tone="lavender" hint="Stock on hand at cost" />
+          <StatCard label="Delivery & fees" value={money(f.orderCostTotal)} icon={<Truck size={20} />} tone="peach" hint="Costs entered on orders" />
+          <StatCard label="Owed to suppliers" value={money(f.owedSuppliers)} icon={<Wallet size={20} />} tone={f.owedSuppliers > 0 ? 'red' : 'mint'} hint="Unpaid purchases" />
         </div>
 
         <div className="grid lg:grid-cols-3 gap-5 mb-6">
@@ -220,6 +270,9 @@ const AdminFinance: React.FC = () => {
           </div>
         </div>
 
+        </>}
+
+        {tab === 'expenses' && <>
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-display text-xl font-extrabold text-ink-900">Expense ledger</h3>
           <Button variant="ghost" size="sm" onClick={exportExpenses} disabled={!f.exp.length}><Download size={14} /> Export CSV</Button>
@@ -247,6 +300,16 @@ const AdminFinance: React.FC = () => {
             </tr>
           ))}
         </Table>
+        <div className="grid xl:grid-cols-2 gap-6 mt-8">
+          <BudgetsPanel budgets={budgets} expenses={expenses} money={money} reload={load} />
+          <RecurringPanel items={recurring} money={money} reload={load} />
+        </div>
+        </>}
+
+        {tab === 'partners' && <PartnersPanel txs={txs} expenses={expenses} money={money} reload={load} />}
+        {tab === 'suppliers' && <SupplierPanel purchases={purchases} money={money} reload={load} />}
+        {tab === 'profit' && <ProfitPanel orders={f.valid} products={products as any} categories={categories} orderCosts={orderCosts} money={money} />}
+        {tab === 'records' && <RecordsPanel locks={locks} orders={orders} products={products} expenses={expenses} txs={txs} purchases={purchases} orderCosts={orderCosts} reload={load} />}
       </>}
 
       <Modal open={formOpen} onClose={() => setFormOpen(false)} title={editId ? "Edit expense" : "Add expense"}>

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Plus, ArrowUpFromLine, Package, Truck } from 'lucide-react';
 import { InvoiceControl } from '../../components/admin/InvoiceControl';
+import { PaymentBadge, PaymentModal, owedOn, type PurchasePay } from '../../components/admin/finance/SupplierPanel';
 import { supabase, PRODUCT_COSTS_EMBED, withCosts, formatCurrency, formatDate, type Product, type InventoryTransaction, type Purchase, type Supplier } from '../../lib/supabase';
 import { useSettings } from '../../contexts/SettingsContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -24,6 +25,7 @@ const AdminInventory: React.FC = () => {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [adjustFor, setAdjustFor] = useState<Product | null>(null);
   const [purchaseModal, setPurchaseModal] = useState(false);
+  const [payFor, setPayFor] = useState<PurchasePay | null>(null);
   const [supplierModal, setSupplierModal] = useState(false);
   const load = async () => {
     const [p, t, pu, s] = await Promise.all([
@@ -125,6 +127,10 @@ const AdminInventory: React.FC = () => {
                 </div>
                 <div className="text-right space-y-1">
                   <p className="font-extrabold text-ink-900">{formatCurrency(Number(pu.total_cost), currency)}</p>
+                  <div className="flex items-center justify-end gap-2">
+                    <PaymentBadge p={pu as PurchasePay} />
+                    {owedOn(pu as PurchasePay) > 0 && <button onClick={() => setPayFor(pu as PurchasePay)} className="text-xs font-extrabold text-mint-700 hover:underline">Pay {formatCurrency(owedOn(pu as PurchasePay), currency)}</button>}
+                  </div>
                   <InvoiceControl table="purchases" id={pu.id} path={pu.invoice_path} name={pu.invoice_name} onChanged={load} />
                 </div>
               </div>
@@ -159,6 +165,7 @@ const AdminInventory: React.FC = () => {
       )}
 
       <AdjustModal product={adjustFor} onClose={() => setAdjustFor(null)} onSaved={() => { setAdjustFor(null); load(); }} />
+      <PaymentModal purchase={payFor} money={n => formatCurrency(n, currency)} onClose={() => setPayFor(null)} onSaved={() => { setPayFor(null); load(); }} />
       <PurchaseModal open={purchaseModal} onClose={() => setPurchaseModal(false)} products={products} suppliers={suppliers} userId={authUserId} onSaved={() => { setPurchaseModal(false); load(); }} />
       <SupplierModal open={supplierModal} onClose={() => setSupplierModal(false)} onSaved={() => { setSupplierModal(false); load(); }} />
     </div>
@@ -235,6 +242,7 @@ const PurchaseModal: React.FC<{ open: boolean; onClose: () => void; products: Pr
   const [supplierId, setSupplierId] = useState('');
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [notes, setNotes] = useState('');
+  const [paidNow, setPaidNow] = useState('');
   const [rows, setRows] = useState<{ product_id: string; quantity: number; unit_cost: number }[]>([{ product_id: '', quantity: 1, unit_cost: 0 }]);
   const [saving, setSaving] = useState(false);
 
@@ -247,6 +255,7 @@ const PurchaseModal: React.FC<{ open: boolean; onClose: () => void; products: Pr
     const { data: purchase, error: e } = await supabase.from('purchases').insert({
       supplier_id: supplierId || null, reference: reference || null, purchase_date: date,
       total_cost: total, notes: notes || null, created_by: userId,
+      ...(Number(paidNow) > 0 ? { amount_paid: Math.min(Number(paidNow), total), last_paid_date: date } : {}),
     }).select('id').single();
     if (e) { error(e.message); setSaving(false); return; }
     await supabase.from('purchase_items').insert(valid.map(r => ({ purchase_id: purchase.id, product_id: r.product_id, quantity: r.quantity, unit_cost: r.unit_cost })));
@@ -292,6 +301,9 @@ const PurchaseModal: React.FC<{ open: boolean; onClose: () => void; products: Pr
           ))}
           <Button variant="secondary" size="sm" onClick={() => setRows([...rows, { product_id: '', quantity: 1, unit_cost: 0 }])}><Plus size={14} /> Add Row</Button>
         </div></div>
+        <Field label="Amount paid to supplier now (leave empty if unpaid)" hint="Pay the rest later from Finance > Suppliers or the Pay button on the purchase.">
+          <Input type="number" min="0" step="0.01" value={paidNow} onChange={e => setPaidNow(e.target.value)} placeholder="0.00" />
+        </Field>
         <Field label="Notes"><Textarea value={notes} onChange={e => setNotes(e.target.value)} className="min-h-[60px]" /></Field>
         <div className="flex items-center justify-between">
           <p className="font-extrabold text-ink-900">Total: {formatCurrency(total, 'LKR')}</p>

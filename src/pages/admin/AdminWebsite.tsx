@@ -24,6 +24,23 @@ const AdminWebsite: React.FC = () => {
   const [sections, setSections] = useState<HomepageSection[]>([]);
   const [branding, setBranding] = useState<WebsiteSettings['branding']>({});
   const [savingBranding, setSavingBranding] = useState(false);
+  const [uploading, setUploading] = useState<'logo_url' | 'favicon_url' | null>(null);
+
+  const uploadBrand = async (key: 'logo_url' | 'favicon_url', file?: File) => {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) return error('Please choose an image file.');
+    setUploading(key);
+    try {
+      const ext = file.name.split('.').pop() || 'png';
+      const path = `branding/${key}-${Date.now()}.${ext}`;
+      const { error: e } = await supabase.storage.from('products').upload(path, file, { upsert: true });
+      if (e) throw e;
+      const url = supabase.storage.from('products').getPublicUrl(path).data.publicUrl;
+      setBranding(b => ({ ...b, [key]: url }));
+      success('Uploaded. Press Save Branding to apply.');
+    } catch (e: any) { error(e.message || 'Upload failed'); }
+    setUploading(null);
+  };
 
   const load = async () => {
     const [s, b] = await Promise.all([
@@ -104,8 +121,26 @@ const AdminWebsite: React.FC = () => {
         <h2 className="font-display text-lg font-extrabold text-ink-900 mb-1 flex items-center gap-2"><Palette size={20} className="text-lavender-500" /> Branding</h2>
         <p className="text-sm text-ink-500 mb-5">Logo, colours and fonts applied across the store.</p>
         <div className="grid sm:grid-cols-2 gap-4">
-          <Field label="Logo URL"><Input value={branding?.logo_url || ''} onChange={e => setBranding({ ...branding, logo_url: e.target.value })} placeholder="https://… (or upload via Supabase storage)" /></Field>
-          <Field label="Favicon URL"><Input value={branding?.favicon_url || ''} onChange={e => setBranding({ ...branding, favicon_url: e.target.value })} /></Field>
+          <Field label="Logo (header)">
+            <div className="flex items-center gap-3">
+              {branding?.logo_url && <img src={branding.logo_url} alt="" className="h-11 max-w-[120px] rounded-xl border border-ink-100 object-contain bg-white" />}
+              <label className="inline-flex items-center rounded-full border border-ink-200 px-4 py-2 text-xs font-extrabold text-ink-700 cursor-pointer hover:border-mint-400">
+                {uploading === 'logo_url' ? 'Uploading…' : 'Upload image'}
+                <input type="file" accept="image/*" className="hidden" onChange={e => { uploadBrand('logo_url', e.target.files?.[0]); e.target.value = ''; }} />
+              </label>
+              {branding?.logo_url && <button type="button" onClick={() => setBranding({ ...branding, logo_url: '' })} className="text-xs font-bold text-red-500 hover:underline">Remove</button>}
+            </div>
+          </Field>
+          <Field label="Tab icon (favicon)" hint="Square PNG/SVG, at least 64×64. Leave empty to use the default MinibloxRC icon.">
+            <div className="flex items-center gap-3">
+              <img src={branding?.favicon_url || '/brand/favicon.png'} alt="" className="w-11 h-11 rounded-xl border border-ink-100 object-cover bg-white" />
+              <label className="inline-flex items-center rounded-full border border-ink-200 px-4 py-2 text-xs font-extrabold text-ink-700 cursor-pointer hover:border-mint-400">
+                {uploading === 'favicon_url' ? 'Uploading…' : 'Upload image'}
+                <input type="file" accept="image/*" className="hidden" onChange={e => { uploadBrand('favicon_url', e.target.files?.[0]); e.target.value = ''; }} />
+              </label>
+              {branding?.favicon_url && <button type="button" onClick={() => setBranding({ ...branding, favicon_url: '' })} className="text-xs font-bold text-red-500 hover:underline">Use default</button>}
+            </div>
+          </Field>
           <Field label="Primary Colour"><div className="flex gap-2"><input type="color" value={branding?.primary_color || '#14b8a6'} onChange={e => setBranding({ ...branding, primary_color: e.target.value })} className="w-12 h-11 rounded-xl border border-ink-100 cursor-pointer" /><Input value={branding?.primary_color || ''} onChange={e => setBranding({ ...branding, primary_color: e.target.value })} /></div></Field>
           <Field label="Accent Colour"><div className="flex gap-2"><input type="color" value={branding?.secondary_color || '#f59e0b'} onChange={e => setBranding({ ...branding, secondary_color: e.target.value })} className="w-12 h-11 rounded-xl border border-ink-100 cursor-pointer" /><Input value={branding?.secondary_color || ''} onChange={e => setBranding({ ...branding, secondary_color: e.target.value })} /></div></Field>
           <Field label="Font"><Input value={branding?.font || 'Nunito'} onChange={e => setBranding({ ...branding, font: e.target.value })} placeholder="Nunito / Quicksand / Baloo 2" /></Field>

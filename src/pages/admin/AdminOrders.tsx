@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Search, Eye, CheckCircle2 } from 'lucide-react';
+import { Search, Eye, CheckCircle2, Printer, MessageCircle } from 'lucide-react';
+import { printOrderInvoice, whatsappLink } from '../../lib/finance';
 import { supabase, openReceipt, formatCurrency, formatDate, ORDER_STATUS_LABELS, ORDER_STATUS_STYLES, type Order, type OrderStatus } from '../../lib/supabase';
 import { useSettings } from '../../contexts/SettingsContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -127,11 +128,28 @@ const AdminOrders: React.FC = () => {
 
 // ------------------------------------------------------------------
 const OrderModal: React.FC<{ order: Order | null; onClose: () => void; onStatus: (o: Order, s: OrderStatus) => void; onVerify: (o: Order) => void }> = ({ order, onClose, onStatus, onVerify }) => {
-  const { currency } = useSettings();
+  const { currency, settings } = useSettings();
   const { success, error } = useToast();
   const [tracking, setTracking] = useState('');
+  const [delivery, setDelivery] = useState('');
+  const [fee, setFee] = useState('');
+  const [costsReady, setCostsReady] = useState(true);
 
   useEffect(() => { setTracking(order?.tracking_number || ''); }, [order]);
+  useEffect(() => {
+    setDelivery(''); setFee('');
+    if (!order) return;
+    supabase.from('order_costs').select('*').eq('order_id', order.id).maybeSingle().then(({ data, error: e }) => {
+      setCostsReady(!e);
+      if (data) { setDelivery(String(data.delivery_cost ?? '')); setFee(String(data.payment_fee ?? '')); }
+    });
+  }, [order?.id]);
+
+  const saveCosts = async () => {
+    if (!order) return;
+    const { error: e } = await supabase.from('order_costs').upsert({ order_id: order.id, delivery_cost: Number(delivery) || 0, payment_fee: Number(fee) || 0, updated_at: new Date().toISOString() }, { onConflict: 'order_id' });
+    if (e) error(e.message); else success('Order costs saved');
+  };
 
   if (!order) return null;
   const payment = order.payments?.[0];
@@ -196,6 +214,25 @@ const OrderModal: React.FC<{ order: Order | null; onClose: () => void; onStatus:
             {payment && payment.status !== 'paid' && order.payment_method === 'bank_transfer' && (
               <Button size="sm" className="mt-3 w-full" onClick={() => onVerify(order)}><CheckCircle2 size={15} /> Verify Payment</Button>
             )}
+          </div>
+
+          <div className="rounded-3xl bg-cream-100 p-4">
+            <p className="text-xs font-extrabold uppercase text-ink-400 mb-1">Our costs for this order</p>
+            <p className="text-[11px] text-ink-400 mb-2">Used for profit reports. Don't also add the same cost under Finance &gt; Expenses.</p>
+            {costsReady ? (
+              <>
+                <div className="grid grid-cols-2 gap-2">
+                  <div><label className="text-[11px] font-bold text-ink-500">Delivery cost</label><Input type="number" min="0" step="0.01" value={delivery} onChange={e => setDelivery(e.target.value)} className="!py-2 text-sm" /></div>
+                  <div><label className="text-[11px] font-bold text-ink-500">Payment fee</label><Input type="number" min="0" step="0.01" value={fee} onChange={e => setFee(e.target.value)} className="!py-2 text-sm" /></div>
+                </div>
+                <Button size="sm" variant="secondary" className="mt-2 w-full" onClick={saveCosts}>Save costs</Button>
+              </>
+            ) : <p className="text-xs text-red-500 font-semibold">Run migration 0009 in Supabase to track order costs.</p>}
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <Button size="sm" variant="outline" onClick={() => printOrderInvoice(order, settings.store || {}, currency)}><Printer size={14} /> Invoice / PDF</Button>
+            <a href={whatsappLink(order, settings.store || {}, currency)} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-1.5 rounded-full border border-mint-300 px-3 text-xs font-extrabold text-mint-700 hover:bg-mint-50"><MessageCircle size={14} /> WhatsApp</a>
           </div>
 
           {order.notes && <p className="text-xs text-ink-400 italic">Note: {order.notes}</p>}

@@ -72,6 +72,13 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   useEffect(() => { refresh(); }, [refresh]);
 
+  // Tab icon: admin-uploaded favicon (Admin > Website > Branding) overrides the built-in one.
+  const faviconUrl = settings.branding?.favicon_url;
+  useEffect(() => {
+    if (!faviconUrl) return;
+    document.querySelectorAll<HTMLLinkElement>('link[rel="icon"], link[rel="apple-touch-icon"]').forEach(l => { l.href = faviconUrl; l.removeAttribute('type'); });
+  }, [faviconUrl]);
+
   const sectionByKey = (key: string) => sections.find(s => s.section_key === key);
   const sectionVisible = (key: string) => sectionByKey(key)?.is_visible !== false;
 
