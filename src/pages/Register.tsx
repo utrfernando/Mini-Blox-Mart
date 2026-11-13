@@ -32,9 +32,9 @@ const Register: React.FC = () => {
   const onSubmit = async (data: FormData) => {
     setLoading(true);
     try {
-      await signUp(data.email, data.password, data.full_name, data.phone);
-      success('Account created! Please sign in.');
-      navigate('/login');
+      const signedIn = await signUp(data.email, data.password, data.full_name, data.phone);
+      if (signedIn) { success('Welcome! Your account is ready.'); navigate('/account', { replace: true }); }
+      else { success('Account created! Please check your email to confirm, then sign in.'); navigate('/login'); }
     } catch (e: any) {
       error(e?.message?.includes('already') ? 'An account with this email already exists.' : (e?.message || 'Registration failed.'));
     } finally { setLoading(false); }

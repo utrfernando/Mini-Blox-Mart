@@ -7,7 +7,8 @@ interface AuthContextType {
   loading: boolean;
   configured: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, fullName: string, phone?: string) => Promise<void>;
+  /** resolves true when the new account is already signed in (email confirmation off) */
+  signUp: (email: string, password: string, fullName: string, phone?: string) => Promise<boolean>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   isAdmin: boolean;
@@ -24,15 +25,17 @@ export const useAuth = () => {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<Profile | null>(null);
   const [authUserId, setAuthUserId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [initializing, setInitializing] = useState(true);
+  // true while we're fetching the profile of a user who just signed in
+  const [profileLoading, setProfileLoading] = useState(false);
+  const loading = initializing || profileLoading;
 
   const fetchProfile = useCallback(async (uid: string) => {
-    const { data, error } = await supabase.from('profiles').select('*').eq('id', uid).single();
-    if (error || !data) {
-      setUser(null);
-      return;
-    }
-    setUser(data as Profile);
+    setProfileLoading(true);
+    try {
+      const { data, error } = await supabase.from('profiles').select('*').eq('id', uid).single();
+      setUser(error || !data ? null : (data as Profile));
+    } finally { setProfileLoading(false); }
   }, []);
 
   const refreshProfile = useCallback(async () => {
@@ -41,7 +44,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     if (!isSupabaseConfigured) {
-      setLoading(false);
+      setInitializing(false);
       return;
     }
     let mounted = true;
@@ -50,32 +53,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!mounted) return;
       setAuthUserId(session?.user?.id ?? null);
       if (session?.user) fetchProfile(session.user.id);
-      setLoading(false);
+      setInitializing(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
       const uid = session?.user?.id ?? null;
       setAuthUserId(uid);
-      if (uid) fetchProfile(uid);
+      // no await here (supabase-js can deadlock if we call it back inside this handler)
+      if (uid) { setProfileLoading(true); fetchProfile(uid); }
       else setUser(null);
-      setLoading(false);
+      setInitializing(false);
     });
 
     return () => { mounted = false; subscription.unsubscribe(); };
   }, [fetchProfile]);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
+    // Wait for the profile so the page we navigate to already knows who is signed in.
+    // (Before this, the first sign-in bounced back to /login because the profile hadn't loaded yet.)
+    if (data.user) { setAuthUserId(data.user.id); await fetchProfile(data.user.id); }
   };
 
   const signUp = async (email: string, password: string, fullName: string, phone?: string) => {
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: { data: { full_name: fullName, phone: phone || '' } },
     });
     if (error) throw error;
+    if (data.session && data.user) { setAuthUserId(data.user.id); await fetchProfile(data.user.id); return true; }
+    return false;
   };
 
   const signOut = async () => {
